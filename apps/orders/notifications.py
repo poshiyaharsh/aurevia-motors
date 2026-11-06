@@ -102,6 +102,9 @@ class OrderNotificationService:
             recipient_list=[recipient]
         )
 
+    # Method alias for convenience
+    send_order_confirmation = send_payment_confirmed_notification
+
     @classmethod
     def send_order_status_notification(cls, order, old_status: str, new_status: str) -> tuple[bool, str]:
         """
@@ -130,6 +133,9 @@ class OrderNotificationService:
             message=plain_message,
             recipient_list=[recipient]
         )
+
+    # Method alias for convenience
+    send_order_status_update = send_order_status_notification
 
     @classmethod
     def _safe_send_mail(cls, subject: str, message: str, recipient_list: list[str]) -> tuple[bool, str]:

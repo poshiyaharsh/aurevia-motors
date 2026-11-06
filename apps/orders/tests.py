@@ -9,8 +9,8 @@ from django.core import mail
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from apps.catalog.models import Brand, Vehicle
-from apps.accounts.models import Address
-from apps.orders.models import Coupon, Order, OrderItem, Payment
+from apps.accounts.models import Address, CustomerProfile
+from apps.orders.models import Coupon, Order, OrderItem, Payment, OrderAuditLog
 from apps.orders.pricing import PricingEngine, OrderCalculationResult
 from apps.orders.payments import PaymentVerificationService
 from apps.orders.notifications import OrderNotificationService
@@ -1234,4 +1234,334 @@ class OrderNotificationTests(TestCase):
         self.order.refresh_from_db()
         self.assertEqual(self.order.status, Order.STATUS_AWAITING_PAYMENT)
         self.assertEqual(self.order.grand_total, Decimal('1500000.00'))
+
+
+class DummyAdminSite(object):
+    pass
+
+
+class Phase10AdminAndOperationsTests(TestCase):
+    """
+    Comprehensive test suite for Phase 10: Operational Administration & Guarded Workflows.
+    Validates RBAC, immutable ledger actions, anti-tamper guards, and status transitions.
+    """
+
+    def setUp(self):
+        from django.contrib.admin.sites import AdminSite
+        from django.test import RequestFactory
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from apps.orders.admin import OrderAdmin, PaymentAdmin, CouponAdmin, OrderAuditLogAdmin
+        from apps.catalog.admin import VehicleAdmin
+        from apps.accounts.admin import CustomerProfileAdmin
+
+        self.factory = RequestFactory()
+        self.site = AdminSite()
+
+        # Users
+        self.client_user = User.objects.create_user(
+            username='client_vip',
+            email='vip@aurevia.test',
+            password='Password123!'
+        )
+        self.staff_user = User.objects.create_user(
+            username='staff_concierge',
+            email='staff@aurevia.test',
+            password='Password123!',
+            is_staff=True
+        )
+        self.admin_user = User.objects.create_superuser(
+            username='super_director',
+            email='director@aurevia.test',
+            password='Password123!'
+        )
+
+        # Catalog setup
+        self.brand = Brand.objects.create(name='Bugatti', slug='bugatti', country='France')
+        self.vehicle = Vehicle.objects.create(
+            brand=self.brand,
+            model_name='Chiron Super Sport 300+',
+            slug='chiron-super-sport-300-plus',
+            year=2024,
+            price=Decimal('3900000.00'),
+            vin='VF9CC381123456789',
+            status='available'
+        )
+
+        # Coupon setup
+        self.coupon = Coupon.objects.create(
+            code='VIPALLOCATION',
+            discount_type=Coupon.DISCOUNT_FIXED,
+            discount_value=Decimal('50000.00'),
+            valid_from=timezone.now() - timedelta(days=1),
+            valid_to=timezone.now() + timedelta(days=30),
+            is_active=True
+        )
+
+        # Bank Wire Order setup
+        self.wire_order = Order.objects.create(
+            user=self.client_user,
+            status=Order.STATUS_AWAITING_PAYMENT,
+            shipping_full_name="Lord Julian Sterling",
+            shipping_phone="+44 20 7946 0991",
+            shipping_address_line_1="100 Mayfair Crescent",
+            shipping_city="London",
+            shipping_state_province="Greater London",
+            shipping_postal_code="W1J 7BR",
+            shipping_country="United Kingdom",
+            subtotal=Decimal('3900000.00'),
+            grand_total=Decimal('3900000.00'),
+            currency='USD'
+        )
+        self.wire_payment = Payment.objects.create(
+            order=self.wire_order,
+            payment_method=Payment.METHOD_BANK_WIRE,
+            amount=Decimal('3900000.00'),
+            status=Payment.STATUS_PENDING
+        )
+
+        # Crypto Order setup
+        self.crypto_order = Order.objects.create(
+            user=self.client_user,
+            status=Order.STATUS_AWAITING_PAYMENT,
+            shipping_full_name="Lord Julian Sterling",
+            shipping_phone="+44 20 7946 0991",
+            shipping_address_line_1="100 Mayfair Crescent",
+            shipping_city="London",
+            shipping_state_province="Greater London",
+            shipping_postal_code="W1J 7BR",
+            shipping_country="United Kingdom",
+            subtotal=Decimal('3900000.00'),
+            grand_total=Decimal('3900000.00'),
+            currency='USD'
+        )
+        self.crypto_payment = Payment.objects.create(
+            order=self.crypto_order,
+            payment_method=Payment.METHOD_CRYPTO_ETH,
+            amount=Decimal('3900000.00'),
+            status=Payment.STATUS_PENDING,
+            transaction_hash='0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+        )
+
+        # Admin instances
+        self.order_admin = OrderAdmin(Order, self.site)
+        self.payment_admin = PaymentAdmin(Payment, self.site)
+        self.coupon_admin = CouponAdmin(Coupon, self.site)
+        self.audit_admin = OrderAuditLogAdmin(OrderAuditLog, self.site)
+        self.vehicle_admin = VehicleAdmin(Vehicle, self.site)
+        self.profile_admin = CustomerProfileAdmin(CustomerProfile, self.site)
+
+    def _get_admin_request(self, user):
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        request = self.factory.get('/admin/')
+        request.user = user
+        # Attach session and messages storage
+        request.session = {}
+        request._messages = FallbackStorage(request)
+        return request
+
+    def test_admin_access_unauthenticated_redirects(self):
+        client = Client()
+        response = client.get('/admin/orders/order/')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/admin/login/', response.url)
+
+    def test_admin_access_non_staff_denied_or_redirected(self):
+        client = Client()
+        client.force_login(self.client_user)
+        response = client.get('/admin/orders/order/')
+        # Django admin redirects non-staff users to admin login
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/admin/login/', response.url)
+
+    def test_admin_access_staff_permitted(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+        ct = ContentType.objects.get_for_model(Order)
+        perm = Permission.objects.get(content_type=ct, codename='view_order')
+        self.staff_user.user_permissions.add(perm)
+
+        client = Client()
+        client.force_login(self.staff_user)
+        response = client.get('/admin/orders/order/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_access_superuser_permitted(self):
+        client = Client()
+        client.force_login(self.admin_user)
+        response = client.get('/admin/orders/order/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_payment_admin_has_no_add_or_delete_permissions(self):
+        request = self._get_admin_request(self.staff_user)
+        self.assertFalse(self.payment_admin.has_add_permission(request))
+        self.assertFalse(self.payment_admin.has_delete_permission(request, self.wire_payment))
+
+    def test_order_audit_log_admin_immutable_permissions(self):
+        request = self._get_admin_request(self.staff_user)
+        self.assertFalse(self.audit_admin.has_add_permission(request))
+        self.assertFalse(self.audit_admin.has_change_permission(request))
+        self.assertFalse(self.audit_admin.has_delete_permission(request))
+
+    def test_confirm_bank_wire_escrow_action_succeeds_and_creates_audit_log(self):
+        request = self._get_admin_request(self.staff_user)
+        queryset = Payment.objects.filter(id=self.wire_payment.id)
+
+        self.payment_admin.confirm_bank_wire_escrow(request, queryset)
+
+        self.wire_payment.refresh_from_db()
+        self.wire_order.refresh_from_db()
+
+        # Payment is confirmed
+        self.assertEqual(self.wire_payment.status, Payment.STATUS_CONFIRMED)
+        self.assertIsNotNone(self.wire_payment.verified_at)
+        self.assertIn("staff_concierge", self.wire_payment.verification_notes)
+
+        # Order transitions to Paid
+        self.assertEqual(self.wire_order.status, Order.STATUS_PAID)
+
+        # Audit log exists
+        audit_log = OrderAuditLog.objects.filter(order=self.wire_order).first()
+        self.assertIsNotNone(audit_log)
+        self.assertEqual(audit_log.performed_by, self.staff_user)
+        self.assertEqual(audit_log.old_status, Order.STATUS_AWAITING_PAYMENT)
+        self.assertEqual(audit_log.new_status, Order.STATUS_PAID)
+        self.assertIn("Bank Wire Escrow Confirmed", audit_log.action)
+
+    def test_anti_tamper_confirm_bank_wire_action_rejects_crypto_payments(self):
+        request = self._get_admin_request(self.staff_user)
+        queryset = Payment.objects.filter(id=self.crypto_payment.id)
+
+        # Staff attempts to confirm a crypto payment through the bank wire action
+        self.payment_admin.confirm_bank_wire_escrow(request, queryset)
+
+        self.crypto_payment.refresh_from_db()
+        self.crypto_order.refresh_from_db()
+
+        # Must remain untouched and unverified
+        self.assertEqual(self.crypto_payment.status, Payment.STATUS_PENDING)
+        self.assertIsNone(self.crypto_payment.verified_at)
+        self.assertEqual(self.crypto_order.status, Order.STATUS_AWAITING_PAYMENT)
+
+        # No fraudulent audit log was generated
+        self.assertFalse(OrderAuditLog.objects.filter(order=self.crypto_order).exists())
+
+    def test_order_admin_save_model_valid_transition(self):
+        # Move order to paid first
+        self.wire_order.status = Order.STATUS_PAID
+        self.wire_order.save(update_fields=['status'])
+
+        request = self._get_admin_request(self.staff_user)
+        
+        # Prepare mock form and object with changed status
+        from unittest.mock import MagicMock
+        form = MagicMock()
+        form.changed_data = ['status']
+        
+        order_to_change = Order.objects.get(id=self.wire_order.id)
+        order_to_change.status = Order.STATUS_PROCESSING
+
+        self.order_admin.save_model(request, order_to_change, form, change=True)
+
+        self.wire_order.refresh_from_db()
+        self.assertEqual(self.wire_order.status, Order.STATUS_PROCESSING)
+
+        # Verify audit log was recorded
+        audit = OrderAuditLog.objects.filter(order=self.wire_order, new_status=Order.STATUS_PROCESSING).first()
+        self.assertIsNotNone(audit)
+        self.assertEqual(audit.performed_by, self.staff_user)
+        self.assertEqual(audit.old_status, Order.STATUS_PAID)
+
+    def test_order_admin_save_model_invalid_transition_prevented(self):
+        # In awaiting_payment status, attempting to leap straight to completed is illegal
+        request = self._get_admin_request(self.staff_user)
+        
+        from unittest.mock import MagicMock
+        form = MagicMock()
+        form.changed_data = ['status']
+
+        order_to_change = Order.objects.get(id=self.wire_order.id)
+        order_to_change.status = Order.STATUS_COMPLETED
+
+        self.order_admin.save_model(request, order_to_change, form, change=True)
+
+        # Must NOT have updated in database
+        self.wire_order.refresh_from_db()
+        self.assertEqual(self.wire_order.status, Order.STATUS_AWAITING_PAYMENT)
+        self.assertFalse(OrderAuditLog.objects.filter(order=self.wire_order, new_status=Order.STATUS_COMPLETED).exists())
+
+    def test_order_admin_bulk_actions(self):
+        request = self._get_admin_request(self.staff_user)
+
+        # Test advance_to_processing
+        self.wire_order.status = Order.STATUS_PAID
+        self.wire_order.save(update_fields=['status'])
+
+        qs = Order.objects.filter(id=self.wire_order.id)
+        self.order_admin.advance_to_processing(request, qs)
+
+        self.wire_order.refresh_from_db()
+        self.assertEqual(self.wire_order.status, Order.STATUS_PROCESSING)
+
+        # Test advance_to_completed
+        self.order_admin.advance_to_completed(request, qs)
+        self.wire_order.refresh_from_db()
+        self.assertEqual(self.wire_order.status, Order.STATUS_COMPLETED)
+
+        # Test cancel_orders on crypto_order (awaiting_payment -> cancelled is allowed)
+        crypto_qs = Order.objects.filter(id=self.crypto_order.id)
+        self.order_admin.cancel_orders(request, crypto_qs)
+        self.crypto_order.refresh_from_db()
+        self.assertEqual(self.crypto_order.status, Order.STATUS_CANCELLED)
+
+    def test_coupon_admin_bulk_actions(self):
+        request = self._get_admin_request(self.staff_user)
+        qs = Coupon.objects.filter(id=self.coupon.id)
+
+        # Deactivate
+        self.coupon_admin.deactivate_coupons(request, qs)
+        self.coupon.refresh_from_db()
+        self.assertFalse(self.coupon.is_active)
+
+        # Activate
+        self.coupon_admin.activate_coupons(request, qs)
+        self.coupon.refresh_from_db()
+        self.assertTrue(self.coupon.is_active)
+
+    def test_catalog_vehicle_admin_status_actions(self):
+        request = self._get_admin_request(self.staff_user)
+        qs = Vehicle.objects.filter(id=self.vehicle.id)
+
+        self.vehicle_admin.mark_reserved(request, qs)
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.status, 'reserved')
+
+        self.vehicle_admin.mark_sold(request, qs)
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.status, 'sold')
+
+        self.vehicle_admin.mark_available(request, qs)
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.status, 'available')
+
+        self.vehicle_admin.mark_incoming(request, qs)
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.status, 'incoming')
+
+    def test_customer_profile_admin_verification_actions(self):
+        request = self._get_admin_request(self.staff_user)
+        # Ensure client profile exists
+        profile, _ = CustomerProfile.objects.get_or_create(user=self.client_user)
+        self.assertFalse(profile.is_verified_collector)
+
+        qs = CustomerProfile.objects.filter(id=profile.id)
+
+        # Verify collector
+        self.profile_admin.verify_collector_status(request, qs)
+        profile.refresh_from_db()
+        self.assertTrue(profile.is_verified_collector)
+
+        # Revoke collector
+        self.profile_admin.revoke_collector_status(request, qs)
+        profile.refresh_from_db()
+        self.assertFalse(profile.is_verified_collector)
 

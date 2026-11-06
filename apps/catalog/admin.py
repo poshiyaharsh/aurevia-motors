@@ -96,6 +96,28 @@ class VehicleAdmin(admin.ModelAdmin):
         }),
     )
 
+    actions = ['mark_available', 'mark_reserved', 'mark_sold', 'mark_incoming']
+
+    @admin.action(description="Mark selected vehicles as Available")
+    def mark_available(self, request, queryset):
+        updated = queryset.update(status='available')
+        self.message_user(request, f"Marked {updated} vehicle(s) as Available.")
+
+    @admin.action(description="Mark selected vehicles as Reserved")
+    def mark_reserved(self, request, queryset):
+        updated = queryset.update(status='reserved')
+        self.message_user(request, f"Marked {updated} vehicle(s) as Reserved.")
+
+    @admin.action(description="Mark selected vehicles as Sold")
+    def mark_sold(self, request, queryset):
+        updated = queryset.update(status='sold')
+        self.message_user(request, f"Marked {updated} vehicle(s) as Sold.")
+
+    @admin.action(description="Mark selected vehicles as Incoming")
+    def mark_incoming(self, request, queryset):
+        updated = queryset.update(status='incoming')
+        self.message_user(request, f"Marked {updated} vehicle(s) as Incoming.")
+
     def formatted_price(self, obj):
         return f"{obj.currency} {obj.price:,.2f}"
     formatted_price.short_description = "Price"

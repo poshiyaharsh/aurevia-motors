@@ -478,3 +478,38 @@ class Payment(models.Model):
         """
         self.transition_to(self.STATUS_FAILED, notes=reason, save=True)
 
+
+class OrderAuditLog(models.Model):
+    """
+    Immutable audit trail for status and settlement adjustments made by staff or automated services.
+    """
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='audit_logs',
+        help_text="Order associated with this audit entry."
+    )
+    performed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='order_audit_logs',
+        help_text="Staff user or system service performing the adjustment."
+    )
+    action = models.CharField(max_length=50, help_text="e.g. status_transition, wire_confirmed, order_cancelled")
+    old_status = models.CharField(max_length=30, blank=True)
+    new_status = models.CharField(max_length=30, blank=True)
+    notes = models.TextField(blank=True, help_text="Detailed audit justification or operational notes.")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Order Audit Log'
+        verbose_name_plural = 'Order Audit Logs'
+
+    def __str__(self):
+        actor = self.performed_by.username if self.performed_by else 'System'
+        return f"[{self.created_at.strftime('%Y-%m-%d %H:%M')}] {self.action} by {actor} on Order {self.order.order_number}"
+
+
