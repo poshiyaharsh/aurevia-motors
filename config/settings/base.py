@@ -30,6 +30,7 @@ INSTALLED_APPS = [
 
     # Aurevia Motors Applications
     'apps.core.apps.CoreConfig',
+    'apps.catalog.apps.CatalogConfig',
 ]
 
 MIDDLEWARE = [
