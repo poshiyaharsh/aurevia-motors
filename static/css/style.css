@@ -979,6 +979,433 @@ body {
     margin-bottom: 24px;
 }
 
+/* Breadcrumbs */
+.breadcrumb-container {
+    padding: 24px 0 12px;
+}
+
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.breadcrumb-nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.breadcrumb-nav a:hover {
+    color: var(--accent-gold);
+}
+
+.breadcrumb-separator {
+    color: var(--border-color);
+}
+
+.breadcrumb-active {
+    color: var(--accent-gold-light);
+    font-weight: 600;
+}
+
+/* Vehicle Detail Page Layout */
+.detail-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 48px;
+    padding-bottom: 70px;
+    align-items: start;
+}
+
+.gallery-container {
+    margin-bottom: 36px;
+}
+
+.main-image-viewport {
+    position: relative;
+    height: 480px;
+    background: #080a0e;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color-subtle);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.gallery-display-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.gallery-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #10141e 0%, #080a0e 100%);
+    color: var(--text-muted);
+}
+
+.placeholder-text {
+    font-size: 0.88rem;
+    letter-spacing: 0.1em;
+}
+
+.detail-status-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+}
+
+.thumbnails-track {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+
+.thumbnail-btn {
+    width: 88px;
+    height: 64px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background: #080a0e;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: var(--transition);
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.thumbnail-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail-btn:hover {
+    opacity: 0.9;
+}
+
+.thumbnail-btn.active {
+    opacity: 1;
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 12px var(--accent-gold-glow);
+}
+
+/* Detail Identity */
+.detail-header {
+    margin-bottom: 30px;
+}
+
+.detail-marque-origin {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.marque-link {
+    color: var(--accent-gold);
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-size: 0.88rem;
+}
+
+.dot-separator {
+    color: var(--border-color);
+}
+
+.vin-pill {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-subtle);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    letter-spacing: 0.05em;
+}
+
+.detail-title {
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    line-height: 1.15;
+    margin-bottom: 12px;
+}
+
+.detail-headline {
+    color: var(--text-secondary);
+    font-size: 1.15rem;
+    line-height: 1.6;
+    font-weight: 300;
+}
+
+/* Telemetry Bar */
+.telemetry-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color-subtle);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 40px;
+}
+
+.telemetry-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.telemetry-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.telemetry-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent-gold-light);
+}
+
+.telemetry-value small {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-left: 2px;
+}
+
+/* Sections */
+.detail-section {
+    margin-bottom: 48px;
+}
+
+.section-heading {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color-subtle);
+}
+
+.detail-description {
+    color: var(--text-secondary);
+    font-size: 1.02rem;
+    line-height: 1.8;
+}
+
+/* Specifications Grid */
+.specs-categories-grid, .specs-default-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+.spec-category-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color-subtle);
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.spec-category-title {
+    font-size: 1.05rem;
+    color: var(--accent-gold);
+    margin-bottom: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.spec-table tr {
+    border-bottom: 1px solid var(--border-color-subtle);
+}
+
+.spec-table tr:last-child {
+    border-bottom: none;
+}
+
+.spec-name {
+    padding: 10px 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    width: 40%;
+}
+
+.spec-value {
+    padding: 10px 0;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-align: right;
+}
+
+/* Detail Sidebar & Acquisition */
+.detail-sidebar {
+    position: sticky;
+    top: 90px;
+}
+
+.acquisition-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 36px 28px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+.acquisition-price-row {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.price-caption {
+    font-size: 0.78rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.acquisition-price {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.acquisition-price .curr {
+    color: var(--accent-gold);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.acquisition-price .amt {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.tax-note {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: block;
+    line-height: 1.4;
+}
+
+.acquisition-status-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-subtle);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-box-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.status-box-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-acquire {
+    font-size: 1rem;
+    padding: 14px;
+}
+
+.btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: var(--border-color-subtle);
+    color: var(--text-muted);
+}
+
+.cta-microcopy {
+    text-align: center;
+    margin-top: 10px;
+    color: var(--text-muted);
+}
+
+.atelier-guarantees {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.guarantee-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.guarantee-icon {
+    font-size: 1.2rem;
+    color: var(--accent-gold);
+}
+
+.guarantee-text strong {
+    display: block;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.guarantee-text p {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+@media (max-width: 992px) {
+    .detail-layout {
+        grid-template-columns: 1fr;
+    }
+    .main-image-viewport {
+        height: 360px;
+    }
+}
+
 /* Error Pages */
 .error-section {
     display: flex;

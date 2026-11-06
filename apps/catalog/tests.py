@@ -242,3 +242,64 @@ class CatalogViewsTestCase(TestCase):
         url = reverse('catalog:brand_detail', kwargs={'slug': 'nonexistent-marque'})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+
+    def test_vehicle_detail_view_status_and_content(self):
+        url = reverse('catalog:vehicle_detail', kwargs={'slug': self.v1.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'catalog/vehicle_detail.html')
+        self.assertContains(response, "Chiron Profilée")
+        self.assertContains(response, "Bugatti")
+        self.assertContains(response, "10,800,000.00")
+        self.assertContains(response, "8.0L W16")
+
+    def test_vehicle_detail_view_with_gallery_and_specs(self):
+        # Attach gallery image and specifications
+        VehicleSpecification.objects.create(
+            vehicle=self.v1,
+            category="Aerodynamics",
+            name="Rear Wing",
+            value="Active Hydraulic Carbon Profile"
+        )
+        url = reverse('catalog:vehicle_detail', kwargs={'slug': self.v1.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Aerodynamics", response.context['grouped_specs'])
+        self.assertContains(response, "Active Hydraulic Carbon Profile")
+
+    def test_vehicle_detail_view_without_images_or_specs(self):
+        # v2 has no gallery images and no custom specifications
+        url = reverse('catalog:vehicle_detail', kwargs={'slug': self.v2.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'catalog/vehicle_detail.html')
+        self.assertContains(response, "911 GT3 RS")
+        self.assertContains(response, "High-Resolution Atelier Media Incoming")
+
+    def test_vehicle_detail_view_404_invalid_slug(self):
+        url = reverse('catalog:vehicle_detail', kwargs={'slug': 'nonexistent-hypercar-slug'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_vehicle_detail_view_404_inactive_brand(self):
+        # Deactivate brand
+        self.brand_bugatti.is_active = False
+        self.brand_bugatti.save()
+        url = reverse('catalog:vehicle_detail', kwargs={'slug': self.v1.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_vehicle_detail_view_reserved_and_sold_states(self):
+        # Reserved vehicle
+        url_reserved = reverse('catalog:vehicle_detail', kwargs={'slug': self.v3.slug})
+        resp_reserved = self.client.get(url_reserved)
+        self.assertEqual(resp_reserved.status_code, 200)
+        self.assertContains(resp_reserved, "Vehicle Currently Reserved")
+
+        # Sold vehicle
+        self.v3.status = Vehicle.STATUS_SOLD
+        self.v3.save()
+        resp_sold = self.client.get(url_reserved)
+        self.assertEqual(resp_sold.status_code, 200)
+        self.assertContains(resp_sold, "Acquired — Private Collection")
+

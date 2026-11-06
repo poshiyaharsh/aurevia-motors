@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}{{ vehicle.year }} {{ vehicle.brand.name }} {{ vehicle.model_name }} — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="vehicle-detail-page">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-container container">
+        <nav class="breadcrumb-nav">
+            <a href="{% url 'core:home' %}">Home</a>
+            <span class="breadcrumb-separator">/</span>
+            <a href="{% url 'catalog:vehicle_list' %}">Catalog</a>
+            <span class="breadcrumb-separator">/</span>
+            <a href="{% url 'catalog:brand_detail' vehicle.brand.slug %}">{{ vehicle.brand.name }}</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-active">{{ vehicle.year }} {{ vehicle.model_name }}</span>
+        </nav>
+    </div>
+
+    <div class="container detail-layout">
+        <!-- Main Content Area -->
+        <div class="detail-main">
+            <!-- Media Gallery Section -->
+            <div class="gallery-container">
+                <div class="main-image-viewport">
+                    {% if vehicle.primary_image %}
+                    <img 
+                        id="active-gallery-image" 
+                        src="{{ vehicle.primary_image.url }}" 
+                        alt="{{ vehicle }}"
+                        class="gallery-display-img"
+                    >
+                    {% elif gallery_images %}
+                    <img 
+                        id="active-gallery-image" 
+                        src="{{ gallery_images.0.image.url }}" 
+                        alt="{{ vehicle }}"
+                        class="gallery-display-img"
+                    >
+                    {% else %}
+                    <div class="gallery-placeholder">
+                        <span class="placeholder-icon">◆</span>
+                        <span class="placeholder-brand">{{ vehicle.brand.name }}</span>
+                        <span class="placeholder-text">High-Resolution Atelier Media Incoming</span>
+                    </div>
+                    {% endif %}
+                    <span class="vehicle-status-badge status-{{ vehicle.status }} detail-status-badge">
+                        {{ vehicle.get_status_display }}
+                    </span>
+                </div>
+
+                <!-- Thumbnail Track (Primary image + Gallery images) -->
+                {% if vehicle.primary_image or gallery_images %}
+                <div class="thumbnails-track">
+                    {% if vehicle.primary_image %}
+                    <button 
+                        type="button" 
+                        class="thumbnail-btn active" 
+                        data-img-src="{{ vehicle.primary_image.url }}"
+                        aria-label="View primary angle"
+                    >
+                        <img src="{{ vehicle.primary_image.url }}" alt="{{ vehicle }} Primary">
+                    </button>
+                    {% endif %}
+                    {% for item in gallery_images %}
+                    <button 
+                        type="button" 
+                        class="thumbnail-btn {% if not vehicle.primary_image and forloop.first %}active{% endif %}" 
+                        data-img-src="{{ item.image.url }}"
+                        aria-label="{{ item.caption|default:'Gallery angle' }}"
+                    >
+                        <img src="{{ item.image.url }}" alt="{{ item.caption|default:vehicle.model_name }}">
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Vehicle Identity Header -->
+            <div class="detail-header">
+                <div class="detail-marque-origin">
+                    <a href="{% url 'catalog:brand_detail' vehicle.brand.slug %}" class="marque-link">
+                        {{ vehicle.brand.name }}
+                    </a>
+                    <span class="dot-separator">&bull;</span>
+                    <span>{{ vehicle.year }}</span>
+                    {% if vehicle.vin %}
+                    <span class="dot-separator">&bull;</span>
+                    <span class="vin-pill">VIN: {{ vehicle.vin }}</span>
+                    {% endif %}
+                </div>
+                <h1 class="detail-title">{{ vehicle.model_name }}</h1>
+                {% if vehicle.headline %}
+                <p class="detail-headline">{{ vehicle.headline }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Key Metrics Telemetry Bar -->
+            <div class="telemetry-bar">
+                {% if vehicle.horsepower %}
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Output</span>
+                    <span class="telemetry-value">{{ vehicle.horsepower }} <small>BHP</small></span>
+                </div>
+                {% endif %}
+                {% if vehicle.acceleration_0_60 %}
+                <div class="telemetry-item">
+                    <span class="telemetry-label">0-60 MPH</span>
+                    <span class="telemetry-value">{{ vehicle.acceleration_0_60 }} <small>SEC</small></span>
+                </div>
+                {% endif %}
+                {% if vehicle.top_speed_mph %}
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Top Speed</span>
+                    <span class="telemetry-value">{{ vehicle.top_speed_mph }} <small>MPH</small></span>
+                </div>
+                {% endif %}
+                {% if vehicle.engine %}
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Powertrain</span>
+                    <span class="telemetry-value">{{ vehicle.engine }}</span>
+                </div>
+                {% endif %}
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Transmission</span>
+                    <span class="telemetry-value">{{ vehicle.get_transmission_display }}</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Odometer</span>
+                    <span class="telemetry-value">{{ vehicle.mileage|default:"Delivery" }} <small>MILES</small></span>
+                </div>
+            </div>
+
+            <!-- Provenance & Description -->
+            <div class="detail-section">
+                <h2 class="section-heading">Provenance & Overview</h2>
+                <div class="detail-description">
+                    {{ vehicle.description|linebreaks }}
+                </div>
+            </div>
+
+            <!-- Technical Specifications Grid -->
+            <div class="detail-section">
+                <h2 class="section-heading">Technical Specifications</h2>
+                {% if grouped_specs %}
+                <div class="specs-categories-grid">
+                    {% for category, specs in grouped_specs.items %}
+                    <div class="spec-category-card">
+                        <h3 class="spec-category-title">{{ category }}</h3>
+                        <table class="spec-table">
+                            <tbody>
+                                {% for spec in specs %}
+                                <tr>
+                                    <td class="spec-name">{{ spec.name }}</td>
+                                    <td class="spec-value">{{ spec.value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="specs-default-grid">
+                    <div class="spec-category-card">
+                        <h3 class="spec-category-title">Core Vehicle Attributes</h3>
+                        <table class="spec-table">
+                            <tbody>
+                                <tr>
+                                    <td class="spec-name">Marque Manufacturer</td>
+                                    <td class="spec-value">{{ vehicle.brand.name }} ({{ vehicle.brand.country }})</td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-name">Model Designation</td>
+                                    <td class="spec-value">{{ vehicle.model_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-name">Model Year</td>
+                                    <td class="spec-value">{{ vehicle.year }}</td>
+                                </tr>
+                                {% if vehicle.exterior_color %}
+                                <tr>
+                                    <td class="spec-name">Exterior Finish</td>
+                                    <td class="spec-value">{{ vehicle.exterior_color }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if vehicle.interior_color %}
+                                <tr>
+                                    <td class="spec-name">Interior Upholstery</td>
+                                    <td class="spec-value">{{ vehicle.interior_color }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="spec-name">Fuel Propulsion</td>
+                                    <td class="spec-value">{{ vehicle.get_fuel_type_display }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Acquisition Sidebar Area -->
+        <aside class="detail-sidebar">
+            <div class="acquisition-card">
+                <div class="acquisition-price-row">
+                    <span class="price-caption">Acquisition Valuation</span>
+                    <div class="acquisition-price">
+                        <span class="curr">{{ vehicle.currency }}</span>
+                        <span class="amt">{{ vehicle.price|intcomma }}</span>
+                    </div>
+                    <span class="tax-note">Excludes local delivery duties & jurisdiction registration</span>
+                </div>
+
+                <div class="acquisition-status-box">
+                    <span class="status-box-label">Availability Status</span>
+                    <div class="status-box-indicator">
+                        <span class="status-dot status-{{ vehicle.status }}"></span>
+                        <strong>{{ vehicle.get_status_display }}</strong>
+                    </div>
+                </div>
+
+                <div class="acquisition-cta">
+                    {% if vehicle.status == 'available' %}
+                    <button type="button" class="btn btn-primary btn-block btn-acquire" id="btn-acquire-action">
+                        Reserve in Atelier
+                    </button>
+                    <p class="cta-microcopy">
+                        <small>Shopping cart & reservation checkout workflows activate in Phase 06.</small>
+                    </p>
+                    {% elif vehicle.status == 'reserved' %}
+                    <button type="button" class="btn btn-secondary btn-block disabled" disabled>
+                        Vehicle Currently Reserved
+                    </button>
+                    <p class="cta-microcopy"><small>Client deposit confirmed. Inquire for reserve waitlist.</small></p>
+                    {% elif vehicle.status == 'sold' %}
+                    <button type="button" class="btn btn-secondary btn-block disabled" disabled>
+                        Acquired — Private Collection
+                    </button>
+                    <p class="cta-microcopy"><small>This vehicle has been delivered to its collector.</small></p>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary btn-block">
+                        Register Inward Interest
+                    </button>
+                    <p class="cta-microcopy"><small>Vehicle currently in transit to our atelier showroom.</small></p>
+                    {% endif %}
+                </div>
+
+                <!-- Atelier Trust Badges -->
+                <div class="atelier-guarantees">
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">🛡</span>
+                        <div class="guarantee-text">
+                            <strong>100-Point Provenance</strong>
+                            <p>Full chassis, battery/engine, and title pedigree inspected.</p>
+                        </div>
+                    </div>
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">✈</span>
+                        <div class="guarantee-text">
+                            <strong>Global White-Glove Transport</strong>
+                            <p>Climate-controlled enclosed logistics worldwide.</p>
+                        </div>
+                    </div>
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">💎</span>
+                        <div class="guarantee-text">
+                            <strong>Dual Settlement Rails</strong>
+                            <p>Traditional wire transfer or Web3 cryptographic settlement.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Related Atelier Supercars -->
+    {% if related_vehicles %}
+    <section class="section related-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">COMPLEMENTARY SHOWCASE</span>
+                <h2 class="section-title">More from the Atelier</h2>
+            </div>
+            <div class="vehicles-grid">
+                {% for related in related_vehicles %}
+                <div class="vehicle-card">
+                    <div class="vehicle-card-media">
+                        {% if related.primary_image %}
+                        <img src="{{ related.primary_image.url }}" alt="{{ related }}">
+                        {% else %}
+                        <div class="vehicle-media-placeholder">
+                            <span class="placeholder-icon">◆</span>
+                            <span class="placeholder-brand">{{ related.brand.name }}</span>
+                        </div>
+                        {% endif %}
+                        <span class="vehicle-status-badge status-{{ related.status }}">{{ related.get_status_display }}</span>
+                    </div>
+                    <div class="vehicle-card-body">
+                        <div class="vehicle-card-meta-top">
+                            <span class="vehicle-brand">{{ related.brand.name }}</span>
+                            <span class="vehicle-year">{{ related.year }}</span>
+                        </div>
+                        <h3 class="vehicle-name">{{ related.model_name }}</h3>
+                        <div class="vehicle-card-footer">
+                            <div class="vehicle-price">
+                                <span class="currency">{{ related.currency }}</span>
+                                <span class="amount">{{ related.price|intcomma }}</span>
+                            </div>
+                            <a href="{% url 'catalog:vehicle_detail' related.slug %}" class="btn-card-action">View Atelier Details &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

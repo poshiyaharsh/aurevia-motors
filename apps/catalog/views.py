@@ -107,3 +107,43 @@ def brand_detail_view(request, slug):
         'vehicles': vehicles,
     }
     return render(request, 'catalog/brand_detail.html', context)
+
+
+def vehicle_detail_view(request, slug):
+    """
+    Bespoke vehicle detail view with interactive gallery imagery,
+    grouped technical specifications, and acquisition status.
+    """
+    vehicle = get_object_or_404(
+        Vehicle.objects.select_related('brand').prefetch_related('gallery_images', 'specifications'),
+        slug=slug,
+        brand__is_active=True
+    )
+
+    # Group specifications by category
+    grouped_specs = {}
+    for spec in vehicle.specifications.all():
+        category = spec.category or 'General'
+        grouped_specs.setdefault(category, []).append(spec)
+
+    # Gallery images
+    gallery_images = list(vehicle.gallery_images.all())
+
+    # Related atelier supercars (same marque or available atelier models)
+    related_vehicles = Vehicle.objects.filter(
+        brand=vehicle.brand
+    ).exclude(id=vehicle.id).select_related('brand')[:3]
+
+    if not related_vehicles.exists():
+        related_vehicles = Vehicle.objects.filter(
+            status=Vehicle.STATUS_AVAILABLE
+        ).exclude(id=vehicle.id).select_related('brand')[:3]
+
+    context = {
+        'vehicle': vehicle,
+        'grouped_specs': grouped_specs,
+        'gallery_images': gallery_images,
+        'related_vehicles': related_vehicles,
+    }
+    return render(request, 'catalog/vehicle_detail.html', context)
+

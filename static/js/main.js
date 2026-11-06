@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const targetId = this.getAttribute('href');
-            if (targetId.length > 1) {
+            if (targetId && targetId.length > 1) {
                 const targetElement = document.querySelector(targetId);
                 if (targetElement) {
                     e.preventDefault();
@@ -18,6 +18,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Interactive Media Gallery Thumbnail Switcher
+    const activeImage = document.getElementById('active-gallery-image');
+    const thumbnailBtns = document.querySelectorAll('.thumbnail-btn');
+
+    if (activeImage && thumbnailBtns.length > 0) {
+        thumbnailBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const newSrc = this.getAttribute('data-img-src');
+                if (newSrc && activeImage.src !== newSrc) {
+                    // Smooth cross-fade transition
+                    activeImage.style.opacity = '0.3';
+                    setTimeout(() => {
+                        activeImage.src = newSrc;
+                        activeImage.style.opacity = '1';
+                    }, 150);
+
+                    thumbnailBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+    }
+
+    // Reservation / Add-to-cart boundary feedback
+    const acquireBtn = document.getElementById('btn-acquire-action');
+    if (acquireBtn) {
+        acquireBtn.addEventListener('click', function () {
+            alert('Aurevia Atelier Reservation: Online cart, digital tokenization, and checkout pipelines will be activated in Phase 06.');
+        });
+    }
 
     // Console branding message
     console.log(

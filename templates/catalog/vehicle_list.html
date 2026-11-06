@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static humanize %}
 
 {% block title %}Supercar Atelier & Vehicle Catalog — Aurevia Motors{% endblock %}
 
@@ -109,9 +109,9 @@
                     <div class="vehicle-card-footer">
                         <div class="vehicle-price">
                             <span class="currency">{{ vehicle.currency }}</span>
-                            <span class="amount">{{ vehicle.price|floatformat:2 }}</span>
+                            <span class="amount">{{ vehicle.price|intcomma }}</span>
                         </div>
-                        <a href="{% url 'catalog:vehicle_list' %}?brand={{ vehicle.brand.slug }}" class="btn-card-action">Marque Portfolio &rarr;</a>
+                        <a href="{% url 'catalog:vehicle_detail' vehicle.slug %}" class="btn-card-action">View Atelier Details &rarr;</a>
                     </div>
                 </div>
             </div>
