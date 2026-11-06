@@ -225,11 +225,26 @@
 
                 <div class="acquisition-cta">
                     {% if vehicle.status == 'available' %}
-                    <button type="button" class="btn btn-primary btn-block btn-acquire" id="btn-acquire-action">
-                        Reserve in Atelier
-                    </button>
+                    <form method="post" action="{% url 'cart:cart_add' vehicle.id %}" class="add-to-cart-form">
+                        {% csrf_token %}
+                        <div class="allocation-qty-selector">
+                            <label for="detail-qty-input" class="qty-label">Allocation Quantity:</label>
+                            <input 
+                                type="number" 
+                                id="detail-qty-input" 
+                                name="quantity" 
+                                value="1" 
+                                min="1" 
+                                max="5" 
+                                class="qty-select-input"
+                            >
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block btn-acquire">
+                            Reserve in Atelier / Add to Cart
+                        </button>
+                    </form>
                     <p class="cta-microcopy">
-                        <small>Shopping cart & reservation checkout workflows activate in Phase 06.</small>
+                        <small>Allocation held securely in your private atelier session.</small>
                     </p>
                     {% elif vehicle.status == 'reserved' %}
                     <button type="button" class="btn btn-secondary btn-block disabled" disabled>

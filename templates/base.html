@@ -23,6 +23,10 @@
                 <a href="{% url 'core:home' %}" class="nav-link">Showroom</a>
                 <a href="{% url 'catalog:vehicle_list' %}" class="nav-link">Catalog</a>
                 <a href="{% url 'catalog:brand_list' %}" class="nav-link">Marques</a>
+                <a href="{% url 'cart:cart_detail' %}" class="nav-link nav-cart-link">
+                    <span>Cart</span>
+                    <span class="nav-cart-badge {% if cart|length > 0 %}badge-active{% endif %}">{{ cart|length }}</span>
+                </a>
                 {% if user.is_authenticated %}
                 <a href="{% url 'accounts:profile' %}" class="nav-link nav-client-portal">
                     <span class="portal-dot">●</span> Atelier ({{ user.username }})

@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}Atelier Cart & Reservations — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="cart-page">
+    <div class="catalog-hero">
+        <div class="container">
+            <span class="section-tag">ATELIER RESERVATIONS</span>
+            <h1 class="catalog-title">Acquisition Cart</h1>
+            <p class="catalog-subtitle">
+                Review your luxury supercar allocations before initiating checkout and escrow settlement.
+            </p>
+        </div>
+    </div>
+
+    <div class="container section">
+        {% if cart|length > 0 %}
+        <div class="cart-layout">
+            <!-- Left Column: Cart Items List -->
+            <div class="cart-items-container">
+                <div class="cart-header-row">
+                    <span class="col-head-product">Supercar Allocation</span>
+                    <span class="col-head-price">Valuation</span>
+                    <span class="col-head-qty">Quantity</span>
+                    <span class="col-head-total">Line Total</span>
+                    <span class="col-head-action"></span>
+                </div>
+
+                <div class="cart-items-list">
+                    {% for item in cart %}
+                    <div class="cart-item-card">
+                        <div class="cart-item-media">
+                            {% if item.vehicle.primary_image %}
+                            <img src="{{ item.vehicle.primary_image.url }}" alt="{{ item.vehicle }}">
+                            {% else %}
+                            <div class="cart-media-placeholder">
+                                <span class="placeholder-icon">◆</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="cart-item-info">
+                            <span class="cart-item-brand">{{ item.vehicle.brand.name }}</span>
+                            <h3 class="cart-item-title">
+                                <a href="{% url 'catalog:vehicle_detail' item.vehicle.slug %}">
+                                    {{ item.vehicle.year }} {{ item.vehicle.model_name }}
+                                </a>
+                            </h3>
+                            {% if item.vehicle.vin %}
+                            <span class="cart-item-vin">VIN: {{ item.vehicle.vin }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="cart-item-price">
+                            <span class="curr">{{ item.currency }}</span>
+                            <span class="amt">{{ item.price|intcomma }}</span>
+                        </div>
+
+                        <div class="cart-item-qty">
+                            <form method="post" action="{% url 'cart:cart_update' item.vehicle.id %}" class="qty-form">
+                                {% csrf_token %}
+                                <input 
+                                    type="number" 
+                                    name="quantity" 
+                                    value="{{ item.quantity }}" 
+                                    min="1" 
+                                    max="5" 
+                                    class="qty-input"
+                                >
+                                <button type="submit" class="btn-qty-update" title="Update Quantity">↻</button>
+                            </form>
+                        </div>
+
+                        <div class="cart-item-total">
+                            <span class="curr">{{ item.currency }}</span>
+                            <span class="amt">{{ item.total_price|intcomma }}</span>
+                        </div>
+
+                        <div class="cart-item-remove">
+                            <a href="{% url 'cart:cart_remove' item.vehicle.id %}" class="btn-remove-item" title="Remove Allocation">&times;</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="cart-actions-bottom">
+                    <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-secondary btn-sm">
+                        &larr; Continue Exploring Atelier
+                    </a>
+                    <a href="{% url 'cart:cart_clear' %}" class="btn-clear-cart" onclick="return confirm('Clear all items from your atelier cart?');">
+                        Clear Cart
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Column: Summary Card -->
+            <aside class="cart-summary-sidebar">
+                <div class="acquisition-card">
+                    <div class="card-header-styled">
+                        <h2>Order Summary</h2>
+                        <span class="cart-count-pill">{{ cart|length }} unit{{ cart|length|pluralize }}</span>
+                    </div>
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">Vehicles Subtotal</span>
+                        <span class="summary-value font-mono">
+                            USD {{ cart_total|intcomma }}
+                        </span>
+                    </div>
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">White-Glove Enclosed Transport</span>
+                        <span class="summary-value text-accent">Complimentary</span>
+                    </div>
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">Provenance & Title Inspection</span>
+                        <span class="summary-value text-accent">Included</span>
+                    </div>
+
+                    <div class="summary-total-divider"></div>
+
+                    <div class="summary-total-row">
+                        <span class="total-label">Estimated Total</span>
+                        <div class="total-amount-box">
+                            <span class="curr">USD</span>
+                            <span class="amt">{{ cart_total|intcomma }}</span>
+                        </div>
+                    </div>
+
+                    <p class="summary-disclaimer">
+                        Applicable duties, regional registration fees, and coupons will be applied in Phase 07 (Order Calculation).
+                    </p>
+
+                    <div class="cart-checkout-actions">
+                        <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-primary btn-block btn-acquire">
+                            Proceed to Valuation & Checkout &rarr;
+                        </a>
+                        <p class="cta-microcopy">
+                            <small>Order calculations & checkout pipelines activate in Phase 07 & 08.</small>
+                        </p>
+                    </div>
+
+                    <div class="atelier-guarantees">
+                        <div class="guarantee-item">
+                            <span class="guarantee-icon">🛡</span>
+                            <div class="guarantee-text">
+                                <strong>Server-Calculated Integrity</strong>
+                                <p>All prices verified directly from atelier database records.</p>
+                            </div>
+                        </div>
+                        <div class="guarantee-item">
+                            <span class="guarantee-icon">🔒</span>
+                            <div class="guarantee-text">
+                                <strong>Secure Client Session</strong>
+                                <p>Allocations preserved seamlessly throughout your session.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        {% else %}
+        <!-- Empty Cart View -->
+        <div class="catalog-empty-card">
+            <div class="empty-icon">◆</div>
+            <h3>Your Atelier Cart is Empty</h3>
+            <p>
+                You have not yet selected any hypercars or supercars for reservation. Browse our curated collection to explore world-class acquisitions.
+            </p>
+            <div class="empty-actions">
+                <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-primary">Browse Supercar Atelier</a>
+                <a href="{% url 'catalog:brand_list' %}" class="btn btn-secondary">Explore Marques</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
