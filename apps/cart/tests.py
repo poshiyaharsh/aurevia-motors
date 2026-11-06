@@ -110,6 +110,16 @@ class CartServiceAndViewsTestCase(TestCase):
         self.assertEqual(resp_remove.status_code, 200)
         self.assertContains(resp_remove, "Your Atelier Cart is Empty")
 
+    def test_remove_item_from_cart_post(self):
+        url_add = reverse('cart:cart_add', kwargs={'vehicle_id': self.v_available.id})
+        self.client.post(url_add, {'quantity': 1})
+
+        url_remove = reverse('cart:cart_remove', kwargs={'vehicle_id': self.v_available.id})
+        resp_remove = self.client.post(url_remove, follow=True)
+        self.assertEqual(resp_remove.status_code, 200)
+        self.assertContains(resp_remove, "Your Atelier Cart is Empty")
+        self.assertEqual(len(self.client.session.get('aurevia_atelier_cart', {})), 0)
+
     def test_clear_cart(self):
         url_add = reverse('cart:cart_add', kwargs={'vehicle_id': self.v_available.id})
         self.client.post(url_add, {'quantity': 1})
@@ -118,6 +128,16 @@ class CartServiceAndViewsTestCase(TestCase):
         resp_clear = self.client.get(url_clear, follow=True)
         self.assertEqual(resp_clear.status_code, 200)
         self.assertContains(resp_clear, "Your atelier cart has been cleared.")
+
+    def test_clear_cart_post(self):
+        url_add = reverse('cart:cart_add', kwargs={'vehicle_id': self.v_available.id})
+        self.client.post(url_add, {'quantity': 1})
+
+        url_clear = reverse('cart:cart_clear')
+        resp_clear = self.client.post(url_clear, follow=True)
+        self.assertEqual(resp_clear.status_code, 200)
+        self.assertContains(resp_clear, "Your atelier cart has been cleared.")
+        self.assertEqual(len(self.client.session.get('aurevia_atelier_cart', {})), 0)
 
     def test_price_tampering_prevention(self):
         # Malicious client sends a fake price in POST request

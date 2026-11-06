@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.utils.http import url_has_allowed_host_and_scheme
 from .forms import CustomerRegistrationForm, CustomerProfileForm, AddressForm
 from .models import Address, CustomerProfile
 
@@ -29,12 +30,20 @@ def register_view(request):
 
 def login_view(request):
     """
-    Client authentication gateway.
+    Client authentication gateway with Open Redirect defense.
     """
     if request.user.is_authenticated:
         return redirect('accounts:profile')
 
-    redirect_to = request.GET.get('next', 'accounts:profile')
+    redirect_to = request.POST.get('next') or request.GET.get('next') or 'accounts:profile'
+
+    # Security: Prevent Open Redirects to external or malicious domains
+    if not url_has_allowed_host_and_scheme(
+        url=redirect_to,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure()
+    ):
+        redirect_to = 'accounts:profile'
 
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)

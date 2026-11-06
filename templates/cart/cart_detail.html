@@ -79,7 +79,10 @@
                         </div>
 
                         <div class="cart-item-remove">
-                            <a href="{% url 'cart:cart_remove' item.vehicle.id %}" class="btn-remove-item" title="Remove Allocation">&times;</a>
+                            <form method="post" action="{% url 'cart:cart_remove' item.vehicle.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-remove-item" title="Remove Allocation" style="background:none; border:none; cursor:pointer;">&times;</button>
+                            </form>
                         </div>
                     </div>
                     {% endfor %}
@@ -89,9 +92,10 @@
                     <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-secondary btn-sm">
                         &larr; Continue Exploring Atelier
                     </a>
-                    <a href="{% url 'cart:cart_clear' %}" class="btn-clear-cart" onclick="return confirm('Clear all items from your atelier cart?');">
-                        Clear Cart
-                    </a>
+                    <form method="post" action="{% url 'cart:cart_clear' %}" style="display:inline;" onsubmit="return confirm('Clear all items from your atelier cart?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-clear-cart" style="background:none; border:none; cursor:pointer;">Clear Cart</button>
+                    </form>
                 </div>
             </div>
 

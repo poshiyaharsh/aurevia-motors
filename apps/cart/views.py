@@ -63,7 +63,7 @@ def cart_update_view(request, vehicle_id):
 
 def cart_remove_view(request, vehicle_id):
     """
-    Removes a vehicle allocation from the cart.
+    Removes a vehicle allocation from the cart. Supports POST (recommended) and GET.
     """
     cart = Cart(request)
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
@@ -75,7 +75,7 @@ def cart_remove_view(request, vehicle_id):
 
 def cart_clear_view(request):
     """
-    Clears all allocations from the atelier cart.
+    Clears all allocations from the atelier cart. Supports POST (recommended) and GET.
     """
     cart = Cart(request)
     cart.clear()

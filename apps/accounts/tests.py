@@ -78,7 +78,53 @@ class AccountsAuthTestCase(TestCase):
             'password': 'WrongPassword123'
         })
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Authentication rejected')
+        self.assertContains(response, 'Invalid credentials')
+
+    def test_login_open_redirect_defense_neutralizes_external_url(self):
+        user = User.objects.create_user(
+            username='redirect_tester',
+            email='tester@aurevia.test',
+            password='SecureTester2026!'
+        )
+        url_login = reverse('accounts:login') + '?next=https://malicious-phishing.test/harvest'
+        response = self.client.post(url_login, {
+            'username': 'redirect_tester',
+            'password': 'SecureTester2026!'
+        })
+        # Must NOT redirect to external domain; must fall back safely to profile
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn('malicious-phishing.test', response.url)
+        self.assertEqual(response.url, reverse('accounts:profile'))
+
+    def test_login_open_redirect_defense_neutralizes_schemeless_url(self):
+        user = User.objects.create_user(
+            username='redirect_tester_2',
+            email='tester2@aurevia.test',
+            password='SecureTester2026!'
+        )
+        url_login = reverse('accounts:login') + '?next=//evil.test/payload'
+        response = self.client.post(url_login, {
+            'username': 'redirect_tester_2',
+            'password': 'SecureTester2026!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn('evil.test', response.url)
+        self.assertEqual(response.url, reverse('accounts:profile'))
+
+    def test_login_safe_internal_redirect_preserved(self):
+        user = User.objects.create_user(
+            username='redirect_tester_3',
+            email='tester3@aurevia.test',
+            password='SecureTester2026!'
+        )
+        safe_target = reverse('orders:order_history')
+        url_login = reverse('accounts:login') + f'?next={safe_target}'
+        response = self.client.post(url_login, {
+            'username': 'redirect_tester_3',
+            'password': 'SecureTester2026!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, safe_target)
 
 
 class AccountsProfileAndAddressTestCase(TestCase):
