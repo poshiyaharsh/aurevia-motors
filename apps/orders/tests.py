@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.core import mail
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from apps.catalog.models import Brand, Vehicle
@@ -12,6 +13,7 @@ from apps.accounts.models import Address
 from apps.orders.models import Coupon, Order, OrderItem, Payment
 from apps.orders.pricing import PricingEngine, OrderCalculationResult
 from apps.orders.payments import PaymentVerificationService
+from apps.orders.notifications import OrderNotificationService
 from apps.cart.cart import Cart
 
 
@@ -906,4 +908,330 @@ class CryptoPaymentSecurityTests(TestCase):
 
         self.assertEqual(self.payment.status, Payment.STATUS_PENDING)
         self.assertEqual(self.order.status, Order.STATUS_AWAITING_PAYMENT)
+
+
+class HistoricalPriceStabilityTests(TestCase):
+    """
+    Test suite verifying that purchase-time prices and vehicle metadata remain immutable
+    in OrderItem even after subsequent catalog modifications.
+    """
+    def setUp(self):
+        self.user = User.objects.create_user(username="stable_collector", password="Password123!")
+        self.brand = Brand.objects.create(name="Ferrari", slug="ferrari", country="Italy")
+        self.vehicle = Vehicle.objects.create(
+            brand=self.brand,
+            model_name="Daytona SP3",
+            slug="daytona-sp3",
+            year=2023,
+            price=Decimal('2250000.00'),
+            vin="ZFF82HLA000123456",
+            status=Vehicle.STATUS_AVAILABLE
+        )
+        self.order = Order.objects.create(
+            user=self.user,
+            status=Order.STATUS_AWAITING_PAYMENT,
+            shipping_full_name="Baron Alistair",
+            shipping_phone="+1 555-019-1234",
+            shipping_address_line_1="Villa Bellissima",
+            shipping_city="Como",
+            shipping_state_province="Lombardy",
+            shipping_postal_code="22100",
+            shipping_country="Italy",
+            subtotal=Decimal('2250000.00'),
+            grand_total=Decimal('2250000.00')
+        )
+        self.item = OrderItem.objects.create(
+            order=self.order,
+            vehicle=self.vehicle,
+            vehicle_model_name=self.vehicle.model_name,
+            vehicle_brand_name=self.vehicle.brand.name,
+            vehicle_year=self.vehicle.year,
+            vehicle_vin=self.vehicle.vin,
+            unit_price=self.vehicle.price,
+            quantity=1,
+            line_total=self.vehicle.price
+        )
+
+    def test_catalog_price_update_does_not_mutate_historical_order_item(self):
+        # Update vehicle in catalog (e.g. inflation adjustment to $2,800,000)
+        self.vehicle.price = Decimal('2800000.00')
+        self.vehicle.save()
+
+        # Order item must retain historical purchase price
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.unit_price, Decimal('2250000.00'))
+        self.assertEqual(self.item.line_total, Decimal('2250000.00'))
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.grand_total, Decimal('2250000.00'))
+
+
+class OrderStatusLifecycleTests(TestCase):
+    """
+    Test suite for Order and Payment state machine transition guards.
+    """
+    def setUp(self):
+        self.user = User.objects.create_user(username="status_tester", password="Password123!")
+        self.order = Order.objects.create(
+            user=self.user,
+            status=Order.STATUS_PENDING,
+            shipping_full_name="Status Client",
+            shipping_phone="123",
+            shipping_address_line_1="Test St",
+            shipping_city="City",
+            shipping_state_province="State",
+            shipping_postal_code="12345",
+            shipping_country="Country",
+            subtotal=Decimal('1000000.00'),
+            grand_total=Decimal('1000000.00')
+        )
+        self.payment = Payment.objects.create(
+            order=self.order,
+            payment_method=Payment.METHOD_BANK_WIRE,
+            amount=Decimal('1000000.00'),
+            status=Payment.STATUS_PENDING
+        )
+
+    def test_valid_order_status_progression(self):
+        # pending -> awaiting_payment
+        self.order.transition_to(Order.STATUS_AWAITING_PAYMENT)
+        self.assertEqual(self.order.status, Order.STATUS_AWAITING_PAYMENT)
+
+        # awaiting_payment -> paid
+        self.order.transition_to(Order.STATUS_PAID)
+        self.assertEqual(self.order.status, Order.STATUS_PAID)
+
+        # paid -> processing
+        self.order.transition_to(Order.STATUS_PROCESSING)
+        self.assertEqual(self.order.status, Order.STATUS_PROCESSING)
+
+        # processing -> completed
+        self.order.transition_to(Order.STATUS_COMPLETED)
+        self.assertEqual(self.order.status, Order.STATUS_COMPLETED)
+
+    def test_invalid_order_status_jump_raises_validation_error(self):
+        # Cannot jump from pending directly to completed
+        with self.assertRaises(ValidationError):
+            self.order.transition_to(Order.STATUS_COMPLETED)
+
+        # Terminal state cannot transition anywhere
+        self.order.status = Order.STATUS_COMPLETED
+        self.order.save()
+        with self.assertRaises(ValidationError):
+            self.order.transition_to(Order.STATUS_PENDING)
+
+    def test_valid_payment_status_progression(self):
+        # pending -> submitted
+        self.payment.transition_to(Payment.STATUS_SUBMITTED)
+        self.assertEqual(self.payment.status, Payment.STATUS_SUBMITTED)
+
+        # submitted -> verifying
+        self.payment.transition_to(Payment.STATUS_VERIFYING)
+        self.assertEqual(self.payment.status, Payment.STATUS_VERIFYING)
+
+        # verifying -> confirmed
+        self.payment.transition_to(Payment.STATUS_CONFIRMED)
+        self.assertEqual(self.payment.status, Payment.STATUS_CONFIRMED)
+
+    def test_invalid_payment_status_transition_raises_validation_error(self):
+        self.payment.status = Payment.STATUS_CONFIRMED
+        self.payment.save()
+        # Confirmed cannot revert to pending
+        with self.assertRaises(ValidationError):
+            self.payment.transition_to(Payment.STATUS_PENDING)
+
+
+class OrderOwnershipAndAccessTests(TestCase):
+    """
+    Test suite verifying strict customer ownership isolation and confidentiality.
+    Ensures zero cross-customer data leakage.
+    """
+    def setUp(self):
+        self.client = Client()
+        self.password = "AureviaSecret2026!"
+        self.client_a = User.objects.create_user(username="client_alpha", password=self.password)
+        self.client_b = User.objects.create_user(username="client_beta", password=self.password)
+
+        self.order_a = Order.objects.create(
+            user=self.client_a,
+            status=Order.STATUS_AWAITING_PAYMENT,
+            shipping_full_name="Alpha Private Client",
+            shipping_phone="+1 555-010-0001",
+            shipping_address_line_1="Secret Estate Alpha",
+            shipping_city="Geneva",
+            shipping_state_province="Geneva",
+            shipping_postal_code="1200",
+            shipping_country="Switzerland",
+            subtotal=Decimal('3500000.00'),
+            grand_total=Decimal('3500000.00')
+        )
+        self.payment_a = Payment.objects.create(
+            order=self.order_a,
+            payment_method=Payment.METHOD_BANK_WIRE,
+            amount=Decimal('3500000.00'),
+            status=Payment.STATUS_PENDING
+        )
+
+        self.order_b = Order.objects.create(
+            user=self.client_b,
+            status=Order.STATUS_PAID,
+            shipping_full_name="Beta Private Client",
+            shipping_phone="+1 555-010-0002",
+            shipping_address_line_1="Secret Estate Beta",
+            shipping_city="Zurich",
+            shipping_state_province="Zurich",
+            shipping_postal_code="8001",
+            shipping_country="Switzerland",
+            subtotal=Decimal('4200000.00'),
+            grand_total=Decimal('4200000.00')
+        )
+
+    def test_order_history_only_shows_authenticated_users_orders(self):
+        self.client.login(username="client_alpha", password=self.password)
+        response = self.client.get(reverse('orders:order_history'))
+        self.assertEqual(response.status_code, 200)
+
+        # Alpha must see Alpha's order
+        self.assertContains(response, self.order_a.order_number)
+        # Alpha MUST NOT see Beta's order
+        self.assertNotContains(response, self.order_b.order_number)
+        self.assertNotContains(response, "Beta Private Client")
+
+    def test_order_detail_view_strict_ownership_isolation(self):
+        # Client A attempts to access Client B's order dossier
+        self.client.login(username="client_alpha", password=self.password)
+        response = self.client.get(reverse('orders:order_detail', args=[self.order_b.order_number]))
+        self.assertEqual(response.status_code, 404)
+
+        # Client B can legitimately access own dossier
+        self.client.login(username="client_beta", password=self.password)
+        response_owner = self.client.get(reverse('orders:order_detail', args=[self.order_b.order_number]))
+        self.assertEqual(response_owner.status_code, 200)
+        self.assertContains(response_owner, self.order_b.order_number)
+        self.assertContains(response_owner, "Secret Estate Beta")
+
+    def test_order_confirmation_view_strict_ownership_isolation(self):
+        self.client.login(username="client_alpha", password=self.password)
+        response = self.client.get(reverse('orders:order_confirmation', args=[self.order_b.order_number]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_unauthenticated_user_redirected_to_login(self):
+        urls = [
+            reverse('orders:order_history'),
+            reverse('orders:order_detail', args=[self.order_a.order_number]),
+            reverse('orders:order_confirmation', args=[self.order_a.order_number]),
+        ]
+        for url in urls:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 302)
+            self.assertIn(reverse('accounts:login'), response.url)
+
+
+class DuplicateOrderPreventionTests(TestCase):
+    """
+    Test suite verifying anti-duplicate and idempotency protections for order creation.
+    """
+    def setUp(self):
+        self.client = Client()
+        self.password = "AureviaSecret2026!"
+        self.user = User.objects.create_user(username="fast_clicker", password=self.password)
+        self.brand = Brand.objects.create(name="Porsche", slug="porsche", country="Germany")
+        self.vehicle = Vehicle.objects.create(
+            brand=self.brand,
+            model_name="911 GT3 RS",
+            slug="911-gt3-rs",
+            year=2024,
+            price=Decimal('450000.00'),
+            status=Vehicle.STATUS_AVAILABLE
+        )
+        self.address = Address.objects.create(
+            user=self.user,
+            full_name="Fast Clicker",
+            street_line_1="100 Speed Way",
+            city="Stuttgart",
+            state_or_province="Baden-Württemberg",
+            postal_code="70173",
+            country="Germany",
+            is_default=True
+        )
+
+    def test_duplicate_checkout_submission_prevented(self):
+        self.client.login(username="fast_clicker", password=self.password)
+        self.client.post(reverse('cart:cart_add', args=[self.vehicle.id]), {'quantity': 1})
+
+        # First checkout submission
+        resp1 = self.client.post(
+            reverse('orders:checkout_process'),
+            {'address_id': self.address.id, 'payment_method': Payment.METHOD_BANK_WIRE}
+        )
+        self.assertEqual(Order.objects.filter(user=self.user).count(), 1)
+
+        # Immediate repeat submission within debounce window (e.g. accidental double-click)
+        resp2 = self.client.post(
+            reverse('orders:checkout_process'),
+            {'address_id': self.address.id, 'payment_method': Payment.METHOD_BANK_WIRE}
+        )
+        # Must not create a second order
+        self.assertEqual(Order.objects.filter(user=self.user).count(), 1)
+
+
+class OrderNotificationTests(TestCase):
+    """
+    Test suite for SMTP notifications and defensive error handling.
+    """
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="notify_user",
+            email="collector@aurevia.test",
+            password="Password123!"
+        )
+        self.order = Order.objects.create(
+            user=self.user,
+            status=Order.STATUS_AWAITING_PAYMENT,
+            shipping_full_name="Notify User",
+            shipping_phone="555-1234",
+            shipping_address_line_1="1 Privet Dr",
+            shipping_city="London",
+            shipping_state_province="Surrey",
+            shipping_postal_code="GU21",
+            shipping_country="UK",
+            subtotal=Decimal('1500000.00'),
+            grand_total=Decimal('1500000.00')
+        )
+        self.payment = Payment.objects.create(
+            order=self.order,
+            payment_method=Payment.METHOD_BANK_WIRE,
+            amount=Decimal('1500000.00'),
+            status=Payment.STATUS_PENDING
+        )
+
+    def test_order_placed_notification_dispatches_email(self):
+        mail.outbox = []
+        success, msg = OrderNotificationService.send_order_placed_notification(self.order)
+        self.assertTrue(success)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertIn(self.order.order_number, email.subject)
+        self.assertIn("collector@aurevia.test", email.to)
+        self.assertIn("1,500,000.00", email.body)
+
+    def test_payment_confirmed_notification_dispatches_email(self):
+        mail.outbox = []
+        success, msg = OrderNotificationService.send_payment_confirmed_notification(self.order)
+        self.assertTrue(success)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertIn("Payment Cleared & Confirmed", email.subject)
+        self.assertIn(self.order.order_number, email.subject)
+
+    def test_email_failure_does_not_corrupt_order_or_raise_exception(self):
+        # Mock send_mail to simulate an SMTP network crash
+        with patch('apps.orders.notifications.send_mail', side_effect=Exception("SMTP Connection Timeout")):
+            success, msg = OrderNotificationService.send_order_placed_notification(self.order)
+            self.assertFalse(success)
+            self.assertIn("SMTP Connection Timeout", msg)
+
+        # Verify order and payment remain 100% intact and uncorrupted
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.STATUS_AWAITING_PAYMENT)
+        self.assertEqual(self.order.grand_total, Decimal('1500000.00'))
 

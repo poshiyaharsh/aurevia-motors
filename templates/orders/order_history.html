@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}Acquisition History & Portfolio — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="order-history-page">
+    <div class="catalog-hero">
+        <div class="container">
+            <span class="section-tag">CLIENT ARCHIVE</span>
+            <h1 class="catalog-title">Acquisition History</h1>
+            <p class="catalog-subtitle">
+                Review your luxury supercar acquisition records, escrow settlements, and delivery provenance.
+            </p>
+        </div>
+    </div>
+
+    <div class="container section">
+        {% if orders %}
+        <div class="account-card" style="padding: 0; overflow: hidden;">
+            <div class="cart-header-row" style="padding: 16px 24px; background: rgba(10, 10, 12, 0.6); border-bottom: 1px solid var(--border-color-subtle);">
+                <span style="flex: 1.5; color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Order Identifier</span>
+                <span style="flex: 1; color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Registration Date</span>
+                <span style="flex: 2; color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Allocations</span>
+                <span style="flex: 1; color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Status</span>
+                <span style="flex: 1.2; text-align: right; color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Valuation</span>
+                <span style="flex: 0.8; text-align: right;"></span>
+            </div>
+
+            <div class="orders-list">
+                {% for ord in orders %}
+                <div style="display: flex; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border-color-subtle); transition: var(--transition-fast);">
+                    <div style="flex: 1.5;">
+                        <a href="{% url 'orders:order_detail' ord.order_number %}" class="font-mono text-accent" style="font-weight: 700; font-size: 0.95rem;">
+                            {{ ord.order_number }}
+                        </a>
+                        <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">
+                            {{ ord.payment.get_payment_method_display|default:"Escrow" }}
+                        </div>
+                    </div>
+
+                    <div style="flex: 1; color: var(--text-secondary); font-size: 0.85rem;">
+                        {{ ord.created_at|date:"M d, Y" }}
+                    </div>
+
+                    <div style="flex: 2;">
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            {% for item in ord.items.all %}
+                            <li style="color: var(--text-primary); font-size: 0.85rem; margin-bottom: 2px;">
+                                <strong>{{ item.vehicle_year }} {{ item.vehicle_brand_name }}</strong> {{ item.vehicle_model_name }}
+                                {% if item.quantity > 1 %}<span class="cart-count-pill" style="font-size: 0.65rem;">&times; {{ item.quantity }}</span>{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div style="flex: 1;">
+                        <span class="cart-count-pill" style="font-size: 0.75rem; {% if ord.status == 'paid' %}background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3);{% endif %}">
+                            {{ ord.get_status_display }}
+                        </span>
+                    </div>
+
+                    <div style="flex: 1.2; text-align: right;">
+                        <span class="font-mono text-accent" style="font-weight: 700; font-size: 1.05rem;">
+                            {{ ord.currency }} ${{ ord.grand_total|intcomma }}
+                        </span>
+                    </div>
+
+                    <div style="flex: 0.8; text-align: right;">
+                        <a href="{% url 'orders:order_detail' ord.order_number %}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 6px 12px;">
+                            Dossier &rarr;
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="catalog-empty-card">
+            <div class="empty-icon">◆</div>
+            <h3>No Acquisition Orders on Record</h3>
+            <p>
+                Your portfolio currently holds no recorded hypercar reservations. Explore our curated collections to initiate an acquisition.
+            </p>
+            <div class="empty-actions">
+                <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-primary">Browse Supercar Atelier</a>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Atelier Profile</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

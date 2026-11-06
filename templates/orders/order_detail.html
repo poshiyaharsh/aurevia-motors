@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}Acquisition Dossier — Order {{ order.order_number }} — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="order-detail-page">
+    <div class="catalog-hero">
+        <div class="container">
+            <span class="section-tag">ACQUISITION PORTFOLIO DOSSIER</span>
+            <h1 class="catalog-title">Order {{ order.order_number }}</h1>
+            <p class="catalog-subtitle">
+                Acquisition Registered: <strong>{{ order.created_at|date:"F d, Y \a\t H:i e" }}</strong> &bull; Total Valuation: <strong class="font-mono text-accent">USD ${{ order.grand_total|intcomma }}</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="container section">
+        <!-- Status Progression Bar -->
+        <div class="account-card" style="margin-bottom: 24px; padding: 20px 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Lifecycle Status</span>
+                <span class="cart-count-pill" style="font-size: 0.85rem; font-weight: 700;">
+                    {{ order.get_status_display }}
+                </span>
+            </div>
+
+            <!-- Milestone Progress Pipeline -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px;">
+                <div style="padding: 10px; border-radius: 4px; text-align: center; background: {% if order.status != 'cancelled' %}rgba(212, 175, 55, 0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold);{% else %}rgba(10, 10, 12, 0.4); border: 1px solid var(--border-color); color: var(--text-muted);{% endif %}">
+                    <span style="display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">1. Order Placed</span>
+                    <small style="font-size: 0.7rem;">{{ order.created_at|date:"M d" }}</small>
+                </div>
+                <div style="padding: 10px; border-radius: 4px; text-align: center; background: {% if order.status in 'paid,processing,completed' %}rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981;{% else %}rgba(10, 10, 12, 0.4); border: 1px solid var(--border-color); color: var(--text-muted);{% endif %}">
+                    <span style="display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">2. Settlement Cleared</span>
+                    <small style="font-size: 0.7rem;">{% if order.payment and order.payment.verified_at %}{{ order.payment.verified_at|date:"M d" }}{% else %}Awaiting{% endif %}</small>
+                </div>
+                <div style="padding: 10px; border-radius: 4px; text-align: center; background: {% if order.status in 'processing,completed' %}rgba(99, 102, 241, 0.15); border: 1px solid #818cf8; color: #818cf8;{% else %}rgba(10, 10, 12, 0.4); border: 1px solid var(--border-color); color: var(--text-muted);{% endif %}">
+                    <span style="display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">3. Title & Prep</span>
+                    <small style="font-size: 0.7rem;">{% if order.status in 'processing,completed' %}In Progress{% else %}Pending{% endif %}</small>
+                </div>
+                <div style="padding: 10px; border-radius: 4px; text-align: center; background: {% if order.status == 'completed' %}rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981;{% else %}rgba(10, 10, 12, 0.4); border: 1px solid var(--border-color); color: var(--text-muted);{% endif %}">
+                    <span style="display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">4. Enclosed Handover</span>
+                    <small style="font-size: 0.7rem;">{% if order.status == 'completed' %}Completed{% else %}Pending{% endif %}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-layout">
+            <!-- Left Column: Items & Domicile Details -->
+            <div class="cart-items-container">
+                <!-- Line items card -->
+                <div class="account-card" style="margin-bottom: 24px;">
+                    <div class="card-header-styled">
+                        <h2>Allocated Masterpieces ({{ items.count }} Unit{{ items.count|pluralize }})</h2>
+                    </div>
+
+                    <div class="cart-items-list">
+                        {% for item in items %}
+                        <div class="cart-item-card" style="padding: 16px 0;">
+                            <div class="cart-item-info">
+                                <span class="cart-item-brand">{{ item.vehicle_brand_name }}</span>
+                                <h3 class="cart-item-title" style="font-size: 1.15rem;">
+                                    <a href="{% url 'catalog:vehicle_detail' item.vehicle.slug %}">
+                                        {{ item.vehicle_year }} {{ item.vehicle_model_name }}
+                                    </a>
+                                </h3>
+                                {% if item.vehicle_vin %}
+                                <span class="cart-item-vin font-mono">VIN: {{ item.vehicle_vin }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="cart-item-price">
+                                <span class="curr">{{ order.currency }}</span>
+                                <span class="amt">{{ item.unit_price|intcomma }}</span>
+                            </div>
+
+                            <div class="cart-item-qty">
+                                <span>Qty: {{ item.quantity }}</span>
+                            </div>
+
+                            <div class="cart-item-total">
+                                <span class="curr">{{ order.currency }}</span>
+                                <span class="amt">{{ item.line_total|intcomma }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Handover Destination -->
+                <div class="account-card" style="margin-bottom: 24px;">
+                    <div class="card-header-styled">
+                        <h2>Title Domicile & Delivery Coordinates</h2>
+                    </div>
+                    <p style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.6; margin: 0;">
+                        <strong>{{ order.shipping_full_name }}</strong><br>
+                        {{ order.shipping_address_line_1 }}<br>
+                        {% if order.shipping_address_line_2 %}{{ order.shipping_address_line_2 }}<br>{% endif %}
+                        {{ order.shipping_city }}, {{ order.shipping_state_province }} {{ order.shipping_postal_code }}<br>
+                        <strong>{{ order.shipping_country }}</strong><br>
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">Concierge Contact: {{ order.shipping_phone }}</span>
+                    </p>
+
+                    {% if order.client_notes %}
+                    <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border-color-subtle);">
+                        <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Special Client Instructions:</span>
+                        <p style="color: var(--text-secondary); font-size: 0.88rem; margin: 4px 0 0; font-style: italic;">
+                            "{{ order.client_notes }}"
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Settlement Ledger Record -->
+                {% if payment %}
+                <div class="account-card">
+                    <div class="card-header-styled">
+                        <h2>Settlement Ledger Record</h2>
+                        <span class="cart-count-pill">{{ payment.get_payment_method_display }}</span>
+                    </div>
+
+                    <div style="background: rgba(10, 10, 12, 0.5); border: 1px solid var(--border-color); border-radius: 4px; padding: 16px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Escrow Identifier</span>
+                                <div class="font-mono" style="color: var(--accent-gold); font-weight: 700;">{{ payment.escrow_reference }}</div>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Payment Status</span>
+                                <div style="font-weight: 600; color: {% if payment.status == 'confirmed' %}#10b981{% else %}var(--text-primary){% endif %};">
+                                    {{ payment.get_status_display }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if payment.transaction_hash %}
+                        <div style="border-top: 1px solid var(--border-color-subtle); padding-top: 10px; margin-top: 10px;">
+                            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">EVM Transaction Hash</span>
+                            <div class="font-mono" style="color: #818cf8; font-size: 0.8rem; word-break: break-all; margin-top: 2px;">
+                                {{ payment.transaction_hash }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if payment.verification_notes %}
+                        <div style="border-top: 1px solid var(--border-color-subtle); padding-top: 10px; margin-top: 10px;">
+                            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Verification Audit Notes</span>
+                            <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 4px 0 0; line-height: 1.4;">
+                                {{ payment.verification_notes }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Financial Breakdown -->
+            <aside class="cart-summary-sidebar">
+                <div class="acquisition-card">
+                    <div class="card-header-styled">
+                        <h2>Financial Ledger</h2>
+                        <span class="cart-count-pill">{{ order.currency }}</span>
+                    </div>
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">Vehicles Subtotal</span>
+                        <span class="summary-value font-mono">
+                            USD {{ order.subtotal|intcomma }}
+                        </span>
+                    </div>
+
+                    {% if order.discount_amount > 0 %}
+                    <div class="summary-line-row discount-row">
+                        <span class="summary-label">
+                            Voucher Concession 
+                            {% if order.coupon_code_snapshot %}({{ order.coupon_code_snapshot }}){% endif %}
+                        </span>
+                        <span class="summary-value font-mono">
+                            - USD {{ order.discount_amount|intcomma }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">White-Glove Transport</span>
+                        <span class="summary-value text-accent">
+                            {% if order.delivery_fee > 0 %}USD {{ order.delivery_fee|intcomma }}{% else %}Complimentary{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">Duties & Title Escrow</span>
+                        <span class="summary-value text-accent">
+                            {% if order.tax_amount > 0 %}USD {{ order.tax_amount|intcomma }}{% else %}Included{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="summary-total-divider"></div>
+
+                    <div class="summary-total-row">
+                        <span class="total-label">Grand Total</span>
+                        <div class="total-amount-box">
+                            <span class="curr">USD</span>
+                            <span class="amt">{{ order.grand_total|intcomma }}</span>
+                        </div>
+                    </div>
+
+                    {% if order.status == 'awaiting_payment' and payment and payment.status == 'pending' %}
+                    <div style="margin-top: 20px;">
+                        <a href="{% url 'orders:payment_detail' order.order_number %}" class="btn btn-primary btn-block">
+                            Complete Settlement &rarr;
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 20px;">
+                        <a href="{% url 'orders:order_history' %}" class="btn btn-secondary btn-block">
+                            &larr; Return to Acquisition History
+                        </a>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-secondary btn-block">
+                            Atelier Profile
+                        </a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}

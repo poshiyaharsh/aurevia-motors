@@ -160,3 +160,16 @@ ORDER_TAX_RATE = Decimal(os.environ.get('ORDER_TAX_RATE', '0.00'))
 # Default delivery/transport fee is $0.00 (white-glove enclosed transport is complimentary)
 ORDER_DELIVERY_FEE = Decimal(os.environ.get('ORDER_DELIVERY_FEE', '0.00'))
 
+# Email & Notification Settings (SMTP & Console)
+EMAIL_BACKEND = os.environ.get(
+    'DJANGO_EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() in ('true', '1', 't')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'concierge@aureviamotors.com')
+
+

@@ -270,6 +270,33 @@ class Order(models.Model):
             self.order_number = self.generate_order_number()
         super().save(*args, **kwargs)
 
+    ALLOWED_TRANSITIONS = {
+        STATUS_PENDING: {STATUS_AWAITING_PAYMENT, STATUS_CANCELLED},
+        STATUS_AWAITING_PAYMENT: {STATUS_PAID, STATUS_CANCELLED},
+        STATUS_PAID: {STATUS_PROCESSING, STATUS_CANCELLED},
+        STATUS_PROCESSING: {STATUS_COMPLETED, STATUS_CANCELLED},
+        STATUS_COMPLETED: set(),
+        STATUS_CANCELLED: set(),
+    }
+
+    def can_transition_to(self, target_status: str) -> bool:
+        allowed = self.ALLOWED_TRANSITIONS.get(self.status, set())
+        return target_status in allowed
+
+    def transition_to(self, target_status: str, save: bool = True):
+        """
+        Enforces controlled status lifecycle transitions for acquisition orders.
+        """
+        if not self.can_transition_to(target_status):
+            raise ValidationError(
+                f"Invalid order status transition from '{self.status}' to '{target_status}'."
+            )
+        old_status = self.status
+        self.status = target_status
+        if save:
+            self.save(update_fields=['status', 'updated_at'])
+        return old_status
+
 
 class OrderItem(models.Model):
     """
@@ -408,25 +435,46 @@ class Payment(models.Model):
             self.escrow_reference = self.generate_escrow_reference()
         super().save(*args, **kwargs)
 
+    ALLOWED_TRANSITIONS = {
+        STATUS_PENDING: {STATUS_SUBMITTED, STATUS_VERIFYING, STATUS_CONFIRMED, STATUS_FAILED},
+        STATUS_SUBMITTED: {STATUS_VERIFYING, STATUS_CONFIRMED, STATUS_FAILED},
+        STATUS_VERIFYING: {STATUS_CONFIRMED, STATUS_FAILED},
+        STATUS_CONFIRMED: {STATUS_REFUNDED},
+        STATUS_FAILED: {STATUS_SUBMITTED, STATUS_VERIFYING},
+        STATUS_REFUNDED: set(),
+    }
+
+    def can_transition_to(self, target_status: str) -> bool:
+        allowed = self.ALLOWED_TRANSITIONS.get(self.status, set())
+        return target_status in allowed
+
+    def transition_to(self, target_status: str, notes: str = None, save: bool = True):
+        """
+        Enforces controlled status lifecycle transitions for payments.
+        """
+        if not self.can_transition_to(target_status):
+            raise ValidationError(
+                f"Invalid payment status transition from '{self.status}' to '{target_status}'."
+            )
+        self.status = target_status
+        if notes:
+            self.verification_notes = notes
+        if target_status == self.STATUS_CONFIRMED and not self.verified_at:
+            self.verified_at = timezone.now()
+        if save:
+            self.save()
+
     def mark_as_confirmed(self, notes=None):
         """
         Transitions payment to CONFIRMED status and marks parent order as PAID.
         """
-        self.status = self.STATUS_CONFIRMED
-        self.verified_at = timezone.now()
-        if notes:
-            self.verification_notes = notes
-        self.save()
-
+        self.transition_to(self.STATUS_CONFIRMED, notes=notes, save=True)
         # Update parent order
-        self.order.status = Order.STATUS_PAID
-        self.order.save()
+        self.order.transition_to(Order.STATUS_PAID, save=True)
 
     def mark_as_failed(self, reason):
         """
         Transitions payment to FAILED status with recorded reason.
         """
-        self.status = self.STATUS_FAILED
-        self.verification_notes = reason
-        self.save()
+        self.transition_to(self.STATUS_FAILED, notes=reason, save=True)
 

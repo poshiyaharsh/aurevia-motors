@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -11,6 +12,7 @@ from apps.cart.cart import Cart
 from .models import Order, OrderItem, Payment, Coupon
 from .pricing import PricingEngine
 from .payments import PaymentVerificationService
+from .notifications import OrderNotificationService
 
 
 @login_required
@@ -155,6 +157,9 @@ def checkout_process_view(request):
         # Clear session cart
         cart.clear()
 
+    # Safely dispatch order placement notification (SMTP failure will not corrupt order)
+    OrderNotificationService.send_order_placed_notification(order)
+
     return redirect('orders:payment_detail', order_number=order.order_number)
 
 
@@ -194,6 +199,11 @@ def payment_confirm_wire_view(request, order_number):
         f"Wire transfer submission recorded for order {order.order_number}. "
         f"Aurevia Concierge will verify receipt within 1 business day."
     )
+    OrderNotificationService.send_order_status_notification(
+        order=order,
+        old_status="Awaiting Wire Dispatch",
+        new_status="Wire Transfer Submitted for Escrow Verification"
+    )
     return redirect('orders:order_confirmation', order_number=order.order_number)
 
 
@@ -219,6 +229,7 @@ def payment_verify_crypto_view(request, order_number):
 
     if verified:
         messages.success(request, f"Transaction cryptographically verified on-chain! Order {order.order_number} is PAID.")
+        OrderNotificationService.send_payment_confirmed_notification(order)
         return redirect('orders:order_confirmation', order_number=order.order_number)
     else:
         messages.warning(request, reason)
@@ -237,3 +248,31 @@ def order_confirmation_view(request, order_number):
         'payment': order.payment,
     }
     return render(request, 'orders/order_confirmation.html', context)
+
+
+@login_required
+def order_history_view(request):
+    """
+    Displays the authenticated customer's acquisition order history.
+    Enforces strict ownership isolation: queries strictly filter by request.user.
+    """
+    orders = Order.objects.filter(user=request.user).select_related('coupon').prefetch_related('items', 'payment')
+    context = {
+        'orders': orders,
+    }
+    return render(request, 'orders/order_history.html', context)
+
+
+@login_required
+def order_detail_view(request, order_number):
+    """
+    Renders the complete acquisition dossier for a specific order.
+    Enforces strict ownership isolation (returns 404 for unowned orders).
+    """
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    context = {
+        'order': order,
+        'payment': getattr(order, 'payment', None),
+        'items': order.items.all(),
+    }
+    return render(request, 'orders/order_detail.html', context)

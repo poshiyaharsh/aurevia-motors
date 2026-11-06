@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}Client Atelier Portal — {{ user.get_full_name|default:user.username }} | Aurevia Motors{% endblock %}
 
@@ -109,6 +110,37 @@
                     <div class="address-empty-box">
                         <p>No destination addresses registered yet.</p>
                         <a href="{% url 'accounts:address_create' %}" class="btn btn-secondary btn-sm">Register Delivery Address</a>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Recent Acquisition Portfolio -->
+                <div class="card-header-styled" style="margin-top: 30px;">
+                    <h2>Acquisition Portfolio</h2>
+                    <a href="{% url 'orders:order_history' %}" class="btn btn-secondary btn-sm">View All Orders</a>
+                </div>
+
+                <div class="addresses-list">
+                    {% for ord in recent_orders %}
+                    <div class="address-card">
+                        <div class="address-header">
+                            <span class="font-mono text-accent" style="font-weight: 700; font-size: 0.85rem;">{{ ord.order_number }}</span>
+                            <span class="cart-count-pill" style="font-size: 0.7rem;">{{ ord.get_status_display }}</span>
+                        </div>
+                        <h3 class="address-recipient" style="font-size: 0.95rem; margin-top: 6px;">
+                            {{ ord.currency }} ${{ ord.grand_total|intcomma }}
+                        </h3>
+                        <p class="address-lines" style="font-size: 0.8rem; margin: 4px 0 10px;">
+                            {{ ord.created_at|date:"M d, Y" }} &bull; {{ ord.items.count }} Line Item{{ ord.items.count|pluralize }}
+                        </p>
+                        <div class="address-actions">
+                            <a href="{% url 'orders:order_detail' ord.order_number %}" class="btn-link-action">View Acquisition Dossier &rarr;</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="address-empty-box">
+                        <p>No acquisition orders registered yet.</p>
+                        <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-secondary btn-sm">Explore Supercars</a>
                     </div>
                     {% endfor %}
                 </div>

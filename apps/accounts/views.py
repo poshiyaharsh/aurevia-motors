@@ -68,6 +68,8 @@ def profile_view(request):
     """
     profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
     addresses = request.user.addresses.all()
+    recent_orders = getattr(request.user, 'orders', None)
+    recent_orders_list = recent_orders.all().prefetch_related('items')[:5] if recent_orders is not None else []
 
     if request.method == 'POST':
         form = CustomerProfileForm(request.POST, instance=profile, user=request.user)
@@ -82,6 +84,7 @@ def profile_view(request):
         'profile': profile,
         'form': form,
         'addresses': addresses,
+        'recent_orders': recent_orders_list,
     }
     return render(request, 'accounts/profile.html', context)
 
