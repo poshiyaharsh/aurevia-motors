@@ -18,10 +18,7 @@ python manage.py seed_coupons
 echo "[Render Build] Seeding 24 flagship hypercars with real studio photography..."
 python manage.py seed_vehicles
 
-# Optional auto-creation of administrator if environment variables are provided
-if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
-    echo "[Render Build] Creating/verifying administrator account..."
-    python manage.py createsuperuser --noinput || true
-fi
+echo "[Render Build] Initializing atelier administrator account..."
+python manage.py seed_admin
 
 echo "[Render Build] Build completed successfully!"
