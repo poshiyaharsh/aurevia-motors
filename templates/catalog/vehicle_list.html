@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supercar Atelier & Vehicle Catalog — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="catalog-page">
+    <div class="catalog-hero">
+        <div class="container">
+            <span class="section-tag">DIGITAL SHOWROOM</span>
+            <h1 class="catalog-title">Supercar Atelier</h1>
+            <p class="catalog-subtitle">
+                Explore handcrafted automotive masterpieces from the world's most prestigious marques.
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Controls & Filters Bar -->
+        <div class="catalog-controls-card">
+            <form method="get" action="{% url 'catalog:vehicle_list' %}" class="catalog-filter-form">
+                <div class="filter-search-wrapper">
+                    <input 
+                        type="text" 
+                        name="q" 
+                        value="{{ q }}" 
+                        placeholder="Search model, engine, marque, or VIN..." 
+                        class="search-input"
+                    >
+                    <button type="submit" class="btn btn-primary btn-search">Search</button>
+                </div>
+
+                <div class="filter-dropdowns-wrapper">
+                    <!-- Marque Filter -->
+                    <select name="brand" class="filter-select" onchange="this.form.submit()">
+                        <option value="">All Marques</option>
+                        {% for marque in marques %}
+                        <option value="{{ marque.slug }}" {% if selected_brand_slug == marque.slug %}selected{% endif %}>
+                            {{ marque.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Status Filter -->
+                    <select name="status" class="filter-select" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        {% for key, label in status_choices %}
+                        <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Sort Filter -->
+                    <select name="sort" class="filter-select" onchange="this.form.submit()">
+                        {% for key, item in sort_options.items %}
+                        <option value="{{ key }}" {% if sort == key %}selected{% endif %}>
+                            {{ item.0 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    {% if q or selected_brand_slug or selected_status %}
+                    <a href="{% url 'catalog:vehicle_list' %}" class="btn-clear-filters">Reset Filters</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- Inventory Summary -->
+        <div class="catalog-meta-row">
+            <div class="results-count">
+                Showing <strong>{{ vehicles|length }}</strong> of <strong>{{ total_count }}</strong> supercar{{ total_count|pluralize }}
+                {% if selected_brand %} for <em>{{ selected_brand.name }}</em>{% endif %}
+                {% if q %} matching "<em>{{ q }}</em>"{% endif %}
+            </div>
+        </div>
+
+        <!-- Vehicle Grid -->
+        {% if vehicles %}
+        <div class="vehicles-grid">
+            {% for vehicle in vehicles %}
+            <div class="vehicle-card">
+                <div class="vehicle-card-media">
+                    {% if vehicle.primary_image %}
+                    <img src="{{ vehicle.primary_image.url }}" alt="{{ vehicle }}">
+                    {% else %}
+                    <div class="vehicle-media-placeholder">
+                        <span class="placeholder-icon">◆</span>
+                        <span class="placeholder-brand">{{ vehicle.brand.name }}</span>
+                    </div>
+                    {% endif %}
+                    <span class="vehicle-status-badge status-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span>
+                </div>
+                <div class="vehicle-card-body">
+                    <div class="vehicle-card-meta-top">
+                        <span class="vehicle-brand">{{ vehicle.brand.name }}</span>
+                        <span class="vehicle-year">{{ vehicle.year }}</span>
+                    </div>
+                    <h2 class="vehicle-name">{{ vehicle.model_name }}</h2>
+                    {% if vehicle.headline %}
+                    <p class="vehicle-headline">{{ vehicle.headline }}</p>
+                    {% endif %}
+                    <div class="vehicle-specs-row">
+                        {% if vehicle.engine %}<span>{{ vehicle.engine }}</span>{% endif %}
+                        {% if vehicle.horsepower %}<span>{{ vehicle.horsepower }} BHP</span>{% endif %}
+                        {% if vehicle.transmission %}<span>{{ vehicle.get_transmission_display }}</span>{% endif %}
+                    </div>
+                    <div class="vehicle-card-footer">
+                        <div class="vehicle-price">
+                            <span class="currency">{{ vehicle.currency }}</span>
+                            <span class="amount">{{ vehicle.price|floatformat:2 }}</span>
+                        </div>
+                        <a href="{% url 'catalog:vehicle_list' %}?brand={{ vehicle.brand.slug }}" class="btn-card-action">Marque Portfolio &rarr;</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if vehicles.has_other_pages %}
+        <div class="pagination-wrapper">
+            <div class="pagination">
+                {% if vehicles.has_previous %}
+                <a href="?page={{ vehicles.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="page-link">&laquo; Previous</a>
+                {% else %}
+                <span class="page-link disabled">&laquo; Previous</span>
+                {% endif %}
+
+                <span class="page-current">
+                    Page {{ vehicles.number }} of {{ vehicles.paginator.num_pages }}
+                </span>
+
+                {% if vehicles.has_next %}
+                <a href="?page={{ vehicles.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="page-link">Next &raquo;</a>
+                {% else %}
+                <span class="page-link disabled">Next &raquo;</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="catalog-empty-card">
+            <div class="empty-icon">◆</div>
+            <h3>No Supercars Found in Atelier</h3>
+            <p>
+                {% if q or selected_brand_slug or selected_status %}
+                We could not locate any vehicles matching your filter criteria. Try broadening your parameters.
+                {% else %}
+                The atelier inventory is currently in private provenance intake. Administrators can register vehicles via the administrative portal.
+                {% endif %}
+            </p>
+            <div class="empty-actions">
+                {% if q or selected_brand_slug or selected_status %}
+                <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-primary">Clear Filters</a>
+                {% endif %}
+                <a href="{% url 'catalog:brand_list' %}" class="btn btn-secondary">Explore Marques</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

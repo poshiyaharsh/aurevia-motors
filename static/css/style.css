@@ -458,6 +458,527 @@ body {
     gap: 16px;
 }
 
+/* Catalog & Inventory Styling */
+.catalog-hero {
+    padding: 60px 0 30px;
+    text-align: center;
+    background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.09) 0%, transparent 70%);
+}
+
+.catalog-title {
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin: 10px 0;
+}
+
+.catalog-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.catalog-controls-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 30px 0 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.catalog-filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.filter-search-wrapper {
+    display: flex;
+    gap: 12px;
+}
+
+.search-input {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-subtle);
+    border-radius: 4px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-family: var(--font-body);
+    transition: var(--transition);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 10px var(--accent-gold-glow);
+}
+
+.btn-search {
+    padding: 0 24px;
+}
+
+.filter-dropdowns-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-subtle);
+    border-radius: 4px;
+    padding: 10px 16px;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+.btn-clear-filters {
+    color: var(--accent-gold);
+    font-size: 0.85rem;
+    text-decoration: underline;
+    margin-left: auto;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-clear-filters:hover {
+    color: var(--accent-gold-light);
+}
+
+.catalog-meta-row {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.results-count {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+}
+
+.results-count strong {
+    color: var(--accent-gold-light);
+}
+
+/* Vehicles Grid */
+.vehicles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 28px;
+    margin-bottom: 50px;
+}
+
+.vehicle-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.vehicle-card:hover {
+    border-color: var(--border-color);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.vehicle-card-media {
+    position: relative;
+    height: 220px;
+    background: #080a0e;
+    overflow: hidden;
+}
+
+.vehicle-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.vehicle-card:hover .vehicle-card-media img {
+    transform: scale(1.05);
+}
+
+.vehicle-media-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-muted);
+    background: linear-gradient(135deg, #10141d 0%, #07090d 100%);
+}
+
+.placeholder-icon {
+    color: var(--accent-gold);
+    font-size: 1.8rem;
+}
+
+.placeholder-brand {
+    font-family: var(--font-heading);
+    letter-spacing: 0.15em;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.vehicle-status-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.status-available {
+    background: rgba(46, 160, 67, 0.9);
+    color: #ffffff;
+}
+
+.status-reserved {
+    background: rgba(212, 175, 55, 0.9);
+    color: #0a0c10;
+}
+
+.status-sold {
+    background: rgba(139, 148, 158, 0.85);
+    color: #ffffff;
+}
+
+.status-incoming {
+    background: rgba(88, 166, 255, 0.9);
+    color: #0a0c10;
+}
+
+.vehicle-card-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.vehicle-card-meta-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.vehicle-brand {
+    font-size: 0.78rem;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    color: var(--accent-gold);
+    text-transform: uppercase;
+}
+
+.vehicle-year {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.vehicle-name {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.vehicle-headline {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.vehicle-specs-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.vehicle-specs-row span {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-subtle);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.vehicle-card-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.vehicle-price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.vehicle-price .currency {
+    font-size: 0.8rem;
+    color: var(--accent-gold);
+    font-weight: 600;
+}
+
+.vehicle-price .amount {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.btn-card-action {
+    color: var(--accent-gold);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    transition: var(--transition);
+}
+
+.btn-card-action:hover {
+    color: var(--accent-gold-light);
+    transform: translateX(3px);
+}
+
+/* Pagination */
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0 60px;
+}
+
+.pagination {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color-subtle);
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+
+.page-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.page-link:hover:not(.disabled) {
+    color: var(--accent-gold);
+}
+
+.page-link.disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.page-current {
+    font-size: 0.85rem;
+    color: var(--accent-gold);
+    font-weight: 600;
+    padding: 0 8px;
+}
+
+/* Catalog Empty Card */
+.catalog-empty-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color-subtle);
+    border-radius: 12px;
+    padding: 60px 30px;
+    text-align: center;
+    max-width: 600px;
+    margin: 40px auto 70px;
+}
+
+.empty-icon {
+    font-size: 2rem;
+    color: var(--accent-gold);
+    margin-bottom: 16px;
+}
+
+.catalog-empty-card h3 {
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+}
+
+.catalog-empty-card p {
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.empty-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* Extended Brands Grid */
+.marques-grid-extended {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 28px;
+}
+
+.brand-showcase-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color-subtle);
+    border-radius: 8px;
+    padding: 32px 28px;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-showcase-card:hover {
+    border-color: var(--border-color);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+.brand-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.brand-emblem-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-gold);
+    font-size: 1.2rem;
+}
+
+.brand-card-name {
+    font-family: var(--font-heading);
+    font-size: 1.45rem;
+    color: var(--text-primary);
+}
+
+.brand-card-origin {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.brand-card-desc {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    flex: 1;
+}
+
+.brand-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color-subtle);
+}
+
+.brand-inventory-pill {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.82rem;
+}
+
+.marque-card-link {
+    text-decoration: none;
+}
+
+.marque-meta {
+    margin-top: 12px;
+    display: flex;
+    gap: 12px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.section-footer-action {
+    margin-top: 40px;
+    text-align: center;
+}
+
+/* Brand Detail Page */
+.brand-hero {
+    padding: 70px 0 40px;
+    background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, transparent 70%);
+    border-bottom: 1px solid var(--border-color-subtle);
+}
+
+.back-link {
+    display: inline-block;
+    color: var(--accent-gold);
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    transition: var(--transition);
+}
+
+.back-link:hover {
+    color: var(--accent-gold-light);
+    transform: translateX(-3px);
+}
+
+.brand-hero-title {
+    font-family: var(--font-heading);
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    margin: 8px 0 16px;
+}
+
+.brand-hero-desc {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 750px;
+    line-height: 1.7;
+    margin-bottom: 24px;
+}
+
 /* Error Pages */
 .error-section {
     display: flex;

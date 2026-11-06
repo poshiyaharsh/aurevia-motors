@@ -13,11 +13,61 @@
             An exclusive digital showroom connecting discerning collectors with the world’s most coveted hypercars and supercars.
         </p>
         <div class="hero-actions">
-            <a href="#marques" class="btn btn-primary">Explore Marques</a>
-            <a href="{% url 'core:health' %}" class="btn btn-secondary">Platform Status</a>
+            <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-primary">Browse Supercar Atelier</a>
+            <a href="{% url 'catalog:brand_list' %}" class="btn btn-secondary">Explore Marques</a>
         </div>
     </div>
 </section>
+
+<!-- Database-driven Featured Supercars Section (when present) -->
+{% if featured_vehicles %}
+<section class="section featured-section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">CURATED ATELIER HIGHLIGHTS</span>
+            <h2 class="section-title">Featured Supercars</h2>
+            <p class="section-desc">Hand-selected masterworks representing the vanguard of automotive performance.</p>
+        </div>
+
+        <div class="vehicles-grid">
+            {% for vehicle in featured_vehicles %}
+            <div class="vehicle-card">
+                <div class="vehicle-card-media">
+                    {% if vehicle.primary_image %}
+                    <img src="{{ vehicle.primary_image.url }}" alt="{{ vehicle }}">
+                    {% else %}
+                    <div class="vehicle-media-placeholder">
+                        <span class="placeholder-icon">◆</span>
+                        <span>{{ vehicle.brand.name }}</span>
+                    </div>
+                    {% endif %}
+                    <span class="vehicle-status-badge status-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span>
+                </div>
+                <div class="vehicle-card-body">
+                    <span class="vehicle-brand">{{ vehicle.brand.name }}</span>
+                    <h3 class="vehicle-name">{{ vehicle.year }} {{ vehicle.model_name }}</h3>
+                    {% if vehicle.headline %}
+                    <p class="vehicle-headline">{{ vehicle.headline }}</p>
+                    {% endif %}
+                    <div class="vehicle-specs-row">
+                        {% if vehicle.engine %}<span>{{ vehicle.engine }}</span>{% endif %}
+                        {% if vehicle.horsepower %}<span>{{ vehicle.horsepower }} BHP</span>{% endif %}
+                        {% if vehicle.transmission %}<span>{{ vehicle.get_transmission_display }}</span>{% endif %}
+                    </div>
+                    <div class="vehicle-card-footer">
+                        <div class="vehicle-price">
+                            <span class="currency">{{ vehicle.currency }}</span>
+                            <span class="amount">{{ vehicle.price|floatformat:2 }}</span>
+                        </div>
+                        <a href="{% url 'catalog:vehicle_list' %}?brand={{ vehicle.brand.slug }}" class="btn-card-action">View Marque &rarr;</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
 
 <section id="marques" class="section marques-section">
     <div class="container">
@@ -29,15 +79,29 @@
 
         <div class="marques-grid">
             {% for marque in marques %}
-            <div class="marque-card">
-                <div class="marque-card-inner">
-                    <div class="marque-icon">◆</div>
-                    <h3 class="marque-name">{{ marque.name }}</h3>
-                    <p class="marque-tagline">{{ marque.tagline }}</p>
-                    <div class="marque-accent-line"></div>
+            <a href="{% url 'catalog:brand_detail' marque.slug %}" class="marque-card-link">
+                <div class="marque-card">
+                    <div class="marque-card-inner">
+                        <div class="marque-icon">◆</div>
+                        <h3 class="marque-name">{{ marque.name }}</h3>
+                        <p class="marque-tagline">{{ marque.description|truncatewords:14 }}</p>
+                        <div class="marque-meta">
+                            <span>{{ marque.country }}</span>
+                            {% if marque.founded_year %}<span>Est. {{ marque.founded_year }}</span>{% endif %}
+                        </div>
+                        <div class="marque-accent-line"></div>
+                    </div>
                 </div>
+            </a>
+            {% empty %}
+            <div class="empty-state">
+                <p>No marques registered yet. Run <code>python manage.py seed_marques</code> to initialize.</p>
             </div>
             {% endfor %}
+        </div>
+
+        <div class="section-footer-action">
+            <a href="{% url 'catalog:brand_list' %}" class="btn btn-secondary">View All Marques &rarr;</a>
         </div>
     </div>
 </section>

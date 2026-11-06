@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Marque Portfolio — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="brands-page">
+    <div class="catalog-hero">
+        <div class="container">
+            <span class="section-tag">ELITE AUTOMOTIVE HOUSES</span>
+            <h1 class="catalog-title">Curated Marques</h1>
+            <p class="catalog-subtitle">
+                Representing the paramount symbols of racing victory, bespoke coachbuilding, and speed.
+            </p>
+        </div>
+    </div>
+
+    <div class="container section">
+        <div class="marques-grid-extended">
+            {% for marque in marques %}
+            <div class="brand-showcase-card">
+                <div class="brand-card-header">
+                    <div class="brand-emblem-badge">◆</div>
+                    <div>
+                        <h2 class="brand-card-name">{{ marque.name }}</h2>
+                        <span class="brand-card-origin">{{ marque.country }}{% if marque.founded_year %} &bull; Founded {{ marque.founded_year }}{% endif %}</span>
+                    </div>
+                </div>
+                <p class="brand-card-desc">{{ marque.description }}</p>
+                <div class="brand-card-footer">
+                    <span class="brand-inventory-pill">
+                        <strong>{{ marque.vehicle_count }}</strong> vehicle{{ marque.vehicle_count|pluralize }}
+                    </span>
+                    <a href="{% url 'catalog:brand_detail' marque.slug %}" class="btn btn-secondary btn-sm">
+                        Explore {{ marque.name }} &rarr;
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="catalog-empty-card">
+                <div class="empty-icon">◆</div>
+                <h3>No Marques Registered</h3>
+                <p>Run <code>python manage.py seed_marques</code> to initialize the official six marques.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

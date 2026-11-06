@@ -13,6 +13,7 @@ class CoreViewsTestCase(TestCase):
     def setUp(self):
         self.client = Client()
         self.factory = RequestFactory()
+        call_command('seed_marques', stdout=StringIO())
 
     def test_home_page_status_and_content(self):
         url = reverse('core:home')

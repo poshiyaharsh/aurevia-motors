@@ -20,9 +20,9 @@
                 <span class="brand-sub">MOTORS</span>
             </a>
             <nav class="nav-menu">
-                <a href="{% url 'core:home' %}" class="nav-link active">Showroom</a>
-                <a href="#marques" class="nav-link">Marques</a>
-                <a href="#philosophy" class="nav-link">Philosophy</a>
+                <a href="{% url 'core:home' %}" class="nav-link">Showroom</a>
+                <a href="{% url 'catalog:vehicle_list' %}" class="nav-link">Catalog</a>
+                <a href="{% url 'catalog:brand_list' %}" class="nav-link">Marques</a>
                 <a href="{% url 'core:health' %}" class="nav-link nav-badge">Status: Live</a>
             </nav>
         </div>

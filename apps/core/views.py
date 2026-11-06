@@ -3,25 +3,24 @@ import logging
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.db import connection
+from apps.catalog.models import Brand, Vehicle
 
 logger = logging.getLogger('apps.core')
 
 
 def home_view(request):
     """
-    Renders the Aurevia Motors luxury digital showroom landing page.
+    Renders the Aurevia Motors luxury digital showroom landing page with live database records.
     """
-    marques = [
-        {"name": "Bugatti", "tagline": "Pur Sang & Incomparable Performance"},
-        {"name": "Lamborghini", "tagline": "Uncompromising Vision & Raw Adrenaline"},
-        {"name": "Ferrari", "tagline": "Maranello Racing Heritage & Elegance"},
-        {"name": "Rolls-Royce", "tagline": "The Pinnacle of Bespoke Opulence"},
-        {"name": "Porsche", "tagline": "Precision Engineering & Timeless Spirit"},
-        {"name": "McLaren", "tagline": "Supercar Innovation & Track Precision"},
-    ]
+    marques = Brand.objects.filter(is_active=True).order_by('order', 'name')
+    featured_vehicles = Vehicle.objects.filter(
+        is_featured=True
+    ).select_related('brand').order_by('-created_at')[:6]
+
     context = {
         "title": "Aurevia Motors — Luxury Supercar Atelier & Digital Showroom",
         "marques": marques,
+        "featured_vehicles": featured_vehicles,
         "year": datetime.datetime.now().year,
     }
     return render(request, "core/home.html", context)

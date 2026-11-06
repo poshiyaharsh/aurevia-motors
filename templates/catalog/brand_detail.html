@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ brand.name }} Atelier Portfolio — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="brand-detail-page">
+    <div class="brand-hero">
+        <div class="container">
+            <a href="{% url 'catalog:brand_list' %}" class="back-link">&larr; Return to Marques</a>
+            <div class="brand-hero-content">
+                <span class="section-tag">{{ brand.country|upper }}{% if brand.founded_year %} &bull; EST. {{ brand.founded_year }}{% endif %}</span>
+                <h1 class="brand-hero-title">{{ brand.name }}</h1>
+                <p class="brand-hero-desc">{{ brand.description }}</p>
+                <div class="brand-hero-actions">
+                    <a href="{% url 'catalog:vehicle_list' %}?brand={{ brand.slug }}" class="btn btn-primary">
+                        Filter {{ brand.name }} in Catalog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container section">
+        <div class="section-header">
+            <span class="section-tag">ATELIER COLLECTION</span>
+            <h2 class="section-title">{{ brand.name }} Inventory</h2>
+            <p class="section-desc">Vehicles currently available or undergoing private provenance intake.</p>
+        </div>
+
+        {% if vehicles %}
+        <div class="vehicles-grid">
+            {% for vehicle in vehicles %}
+            <div class="vehicle-card">
+                <div class="vehicle-card-media">
+                    {% if vehicle.primary_image %}
+                    <img src="{{ vehicle.primary_image.url }}" alt="{{ vehicle }}">
+                    {% else %}
+                    <div class="vehicle-media-placeholder">
+                        <span class="placeholder-icon">◆</span>
+                        <span class="placeholder-brand">{{ brand.name }}</span>
+                    </div>
+                    {% endif %}
+                    <span class="vehicle-status-badge status-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span>
+                </div>
+                <div class="vehicle-card-body">
+                    <div class="vehicle-card-meta-top">
+                        <span class="vehicle-brand">{{ brand.name }}</span>
+                        <span class="vehicle-year">{{ vehicle.year }}</span>
+                    </div>
+                    <h3 class="vehicle-name">{{ vehicle.model_name }}</h3>
+                    {% if vehicle.headline %}
+                    <p class="vehicle-headline">{{ vehicle.headline }}</p>
+                    {% endif %}
+                    <div class="vehicle-specs-row">
+                        {% if vehicle.engine %}<span>{{ vehicle.engine }}</span>{% endif %}
+                        {% if vehicle.horsepower %}<span>{{ vehicle.horsepower }} BHP</span>{% endif %}
+                        {% if vehicle.transmission %}<span>{{ vehicle.get_transmission_display }}</span>{% endif %}
+                    </div>
+                    <div class="vehicle-card-footer">
+                        <div class="vehicle-price">
+                            <span class="currency">{{ vehicle.currency }}</span>
+                            <span class="amount">{{ vehicle.price|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="catalog-empty-card">
+            <div class="empty-icon">◆</div>
+            <h3>No Vehicles Currently Listed for {{ brand.name }}</h3>
+            <p>Our provenance specialists are curating upcoming acquisitions for this marque.</p>
+            <div class="empty-actions">
+                <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-primary">Browse All Supercars</a>
+                <a href="{% url 'catalog:brand_list' %}" class="btn btn-secondary">Explore Other Marques</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
