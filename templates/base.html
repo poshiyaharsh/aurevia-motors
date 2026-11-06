@@ -12,18 +12,27 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <header class="navbar">
         <div class="nav-container">
-            <a href="{% url 'core:home' %}" class="brand-logo">
+            <a href="{% url 'core:home' %}" class="brand-logo" aria-label="Aurevia Motors Homepage">
                 <span class="brand-icon">◆</span>
                 <span class="brand-text">AUREVIA</span>
                 <span class="brand-sub">MOTORS</span>
             </a>
-            <nav class="nav-menu">
+
+            <!-- Mobile Menu Toggle Button -->
+            <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+
+            <nav class="nav-menu" id="nav-menu">
                 <a href="{% url 'core:home' %}" class="nav-link">Showroom</a>
                 <a href="{% url 'catalog:vehicle_list' %}" class="nav-link">Catalog</a>
                 <a href="{% url 'catalog:brand_list' %}" class="nav-link">Marques</a>
-                <a href="{% url 'cart:cart_detail' %}" class="nav-link nav-cart-link">
+                <a href="{% url 'cart:cart_detail' %}" class="nav-link nav-cart-link" aria-label="Cart with {{ cart|length }} allocations">
                     <span>Cart</span>
                     <span class="nav-cart-badge {% if cart|length > 0 %}badge-active{% endif %}">{{ cart|length }}</span>
                 </a>
@@ -42,7 +51,7 @@
     </header>
 
     {% if messages %}
-    <div class="messages-container container">
+    <div class="messages-container container" role="alert" aria-live="polite">
         {% for message in messages %}
         <div class="alert alert-{{ message.tags|default:'info' }}">
             <span class="alert-icon">◆</span>
@@ -52,7 +61,7 @@
     </div>
     {% endif %}
 
-    <main class="main-content">
+    <main id="main-content" class="main-content" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 

@@ -19,6 +19,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Mobile Hamburger Navigation Drawer
+    const navToggle = document.getElementById('nav-toggle');
+    const navMenu = document.getElementById('nav-menu');
+
+    if (navToggle && navMenu) {
+        navToggle.addEventListener('click', () => {
+            const isExpanded = navToggle.getAttribute('aria-expanded') === 'true';
+            navToggle.setAttribute('aria-expanded', !isExpanded);
+            navToggle.classList.toggle('active');
+            navMenu.classList.toggle('nav-menu-open');
+        });
+
+        // Close mobile drawer when clicking a link
+        navMenu.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                navToggle.setAttribute('aria-expanded', 'false');
+                navToggle.classList.remove('active');
+                navMenu.classList.remove('nav-menu-open');
+            });
+        });
+    }
+
     // Interactive Media Gallery Thumbnail Switcher
     const activeImage = document.getElementById('active-gallery-image');
     const thumbnailBtns = document.querySelectorAll('.thumbnail-btn');
