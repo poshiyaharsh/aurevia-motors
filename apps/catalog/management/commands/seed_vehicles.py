@@ -6,6 +6,8 @@ Usage:
 """
 
 import os
+import io
+import urllib.request
 from decimal import Decimal
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
@@ -13,6 +15,51 @@ from django.core.management.base import BaseCommand
 from django.core.files import File
 from django.conf import settings
 from apps.catalog.models import Brand, Vehicle, VehicleImage, VehicleSpecification
+
+
+def fetch_and_save_real_car_image(image_url: str, output_path: Path, fallback_args: dict) -> str:
+    """
+    Downloads high-resolution real supercar photography, resizes it to 1200x800,
+    and saves it to the atelier media store. Falls back gracefully to studio render if offline.
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        req = urllib.request.Request(
+            image_url,
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        )
+        with urllib.request.urlopen(req, timeout=12) as response:
+            data = response.read()
+            img = Image.open(io.BytesIO(data))
+            img = img.convert("RGB")
+            # High-fidelity resize preserving aspect ratio crop
+            target_w, target_h = 1200, 800
+            img_ratio = img.width / img.height
+            target_ratio = target_w / target_h
+
+            if img_ratio > target_ratio:
+                # Wider: crop horizontal edges
+                new_w = int(target_ratio * img.height)
+                offset = (img.width - new_w) // 2
+                img = img.crop((offset, 0, offset + new_w, img.height))
+            else:
+                # Taller: crop vertical edges
+                new_h = int(img.width / target_ratio)
+                offset = (img.height - new_h) // 2
+                img = img.crop((0, offset, img.width, offset + new_h))
+
+            img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+
+            # Add subtle luxury gold watermark in lower corner
+            draw = ImageDraw.Draw(img)
+            draw.text((30, 755), f"AUREVIA MOTORS ATELIER  ◆  {fallback_args.get('marque_name', '').upper()} {fallback_args.get('model_name', '').upper()}", fill=(212, 175, 55))
+            
+            img.save(output_path, "JPEG", quality=90)
+            return str(output_path)
+    except Exception as exc:
+        # Graceful fallback to procedural studio render
+        fallback_args['output_path'] = output_path
+        return generate_car_image(**fallback_args)
 
 
 def generate_car_image(
@@ -748,22 +795,85 @@ class Command(BaseCommand):
         media_root = Path(settings.MEDIA_ROOT)
         media_root.mkdir(parents=True, exist_ok=True)
 
+        # Curated collection of high-resolution real supercar photography URLs from Unsplash
+        hero_real_images = {
+            "bugatti": [
+                "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=1200&q=80",
+                "https://images.unsplash.com/photo-1600793575654-910699b5e4d4?w=1200&q=80",
+                "https://images.unsplash.com/photo-1541348263662-e0c8de4259ba?w=1200&q=80",
+                "https://images.unsplash.com/photo-1563720223185-11003d516935?w=1200&q=80",
+            ],
+            "lamborghini": [
+                "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=1200&q=80",
+                "https://images.unsplash.com/photo-1580414057403-c5f451f30e1c?w=1200&q=80",
+                "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1200&q=80",
+                "https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=1200&q=80",
+            ],
+            "ferrari": [
+                "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=1200&q=80",
+                "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=1200&q=80",
+                "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=1200&q=80",
+                "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1200&q=80",
+            ],
+            "rolls-royce": [
+                "https://images.unsplash.com/photo-1631295868223-63265b40d9e4?w=1200&q=80",
+                "https://images.unsplash.com/photo-1563720223523-491ff04651de?w=1200&q=80",
+                "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=1200&q=80",
+                "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&q=80",
+            ],
+            "porsche": [
+                "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=1200&q=80",
+                "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&q=80",
+                "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=1200&q=80",
+                "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=1200&q=80",
+            ],
+            "mclaren": [
+                "https://images.unsplash.com/photo-1621135802920-133df287f89c?w=1200&q=80",
+                "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=1200&q=80",
+                "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=1200&q=80",
+                "https://images.unsplash.com/photo-1621135802920-133df287f89c?w=1200&q=80",
+            ],
+        }
+
+        gallery_real_images = [
+            # Cockpit / Interior
+            "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&q=80",
+            # Rear Aero / Tail
+            "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=1200&q=80",
+            # Track Stance / Wheel Detail
+            "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=1200&q=80",
+        ]
+
+        # Keep count of vehicles processed per marque for distinct image assignment
+        marque_counter = {}
+
         for item in vehicles_catalog:
             brand = Brand.objects.get(slug=item["brand_slug"])
+            m_slug = item["brand_slug"]
+            m_idx = marque_counter.get(m_slug, 0)
+            marque_counter[m_slug] = m_idx + 1
             
-            # Generate and attach high-res studio primary hero image
+            # Download and attach high-res real supercar primary hero photograph
             primary_rel_path = f"vehicles/primary/{item['slug']}_hero.jpg"
             primary_full_path = media_root / primary_rel_path
             
-            generate_car_image(
-                marque_name=brand.name,
-                model_name=item["model_name"],
-                year=item["year"],
-                hp=item["horsepower"],
-                top_speed=item["top_speed_mph"],
-                accent_color=item["exterior_color"],
-                view_type="Hero Studio Stance",
-                output_path=primary_full_path
+            marque_hero_list = hero_real_images.get(m_slug, [])
+            hero_url = marque_hero_list[m_idx % len(marque_hero_list)]
+
+            hero_fallback_args = {
+                "marque_name": brand.name,
+                "model_name": item["model_name"],
+                "year": item["year"],
+                "hp": item["horsepower"],
+                "top_speed": item["top_speed_mph"],
+                "accent_color": item["exterior_color"],
+                "view_type": "Hero Studio Stance",
+            }
+
+            fetch_and_save_real_car_image(
+                image_url=hero_url,
+                output_path=primary_full_path,
+                fallback_args=hero_fallback_args
             )
 
             vehicle, created = Vehicle.objects.update_or_create(
@@ -792,7 +902,7 @@ class Command(BaseCommand):
                 }
             )
 
-            # Generate 3 rich gallery media angles
+            # Download and attach 3 rich real gallery media angles
             gallery_angles = [
                 ("Cockpit & Bespoke Controls", "cockpit"),
                 ("Rear Aerodynamic Profile", "rear_aero"),
@@ -802,16 +912,22 @@ class Command(BaseCommand):
             for g_idx, (g_caption, g_slug_suffix) in enumerate(gallery_angles):
                 gallery_rel_path = f"vehicles/gallery/{item['slug']}_{g_slug_suffix}.jpg"
                 gallery_full_path = media_root / gallery_rel_path
+                g_url = gallery_real_images[g_idx % len(gallery_real_images)]
 
-                generate_car_image(
-                    marque_name=brand.name,
-                    model_name=item["model_name"],
-                    year=item["year"],
-                    hp=item["horsepower"],
-                    top_speed=item["top_speed_mph"],
-                    accent_color=item["exterior_color"],
-                    view_type=g_caption,
-                    output_path=gallery_full_path
+                g_fallback_args = {
+                    "marque_name": brand.name,
+                    "model_name": item["model_name"],
+                    "year": item["year"],
+                    "hp": item["horsepower"],
+                    "top_speed": item["top_speed_mph"],
+                    "accent_color": item["exterior_color"],
+                    "view_type": g_caption,
+                }
+
+                fetch_and_save_real_car_image(
+                    image_url=g_url,
+                    output_path=gallery_full_path,
+                    fallback_args=g_fallback_args
                 )
 
                 VehicleImage.objects.update_or_create(
