@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Aurevia Motors — Luxury Supercar Atelier & Digital Showroom{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-tagline">BESPOKE AUTOMOTIVE EXCELLENCE</div>
+        <h1 class="hero-title">The Pinnacle of Speed, Luxury & Innovation</h1>
+        <p class="hero-subtitle">
+            An exclusive digital showroom connecting discerning collectors with the world’s most coveted hypercars and supercars.
+        </p>
+        <div class="hero-actions">
+            <a href="#marques" class="btn btn-primary">Explore Marques</a>
+            <a href="{% url 'core:health' %}" class="btn btn-secondary">Platform Status</a>
+        </div>
+    </div>
+</section>
+
+<section id="marques" class="section marques-section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">ELITE AUTOMOTIVE HOUSES</span>
+            <h2 class="section-title">Curated Marque Portfolio</h2>
+            <p class="section-desc">Handcrafted precision and legendary engineering from iconic manufacturers.</p>
+        </div>
+
+        <div class="marques-grid">
+            {% for marque in marques %}
+            <div class="marque-card">
+                <div class="marque-card-inner">
+                    <div class="marque-icon">◆</div>
+                    <h3 class="marque-name">{{ marque.name }}</h3>
+                    <p class="marque-tagline">{{ marque.tagline }}</p>
+                    <div class="marque-accent-line"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section id="philosophy" class="section philosophy-section">
+    <div class="container">
+        <div class="philosophy-grid">
+            <div class="philosophy-card">
+                <div class="card-num">01</div>
+                <h3>Artisanal Curation</h3>
+                <p>Every vehicle featured in the Aurevia gallery undergoes meticulous provenance verification and condition analysis.</p>
+            </div>
+            <div class="philosophy-card">
+                <div class="card-num">02</div>
+                <h3>Bespoke Acquisition</h3>
+                <p>Discreet, white-glove digital acquisition workflows tailored to sovereign wealth and private collectors worldwide.</p>
+            </div>
+            <div class="philosophy-card">
+                <div class="card-num">03</div>
+                <h3>Next-Gen Transactions</h3>
+                <p>Built for modern high-value commerce, incorporating dual traditional and cryptographically verified settlement rails.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}System Health & Operational Status — Aurevia Motors{% endblock %}
+
+{% block content %}
+<section class="section health-section">
+    <div class="container">
+        <div class="health-card">
+            <div class="health-header">
+                <div class="status-indicator-wrapper">
+                    <span class="status-dot {% if health.status == 'healthy' %}status-healthy{% else %}status-degraded{% endif %}"></span>
+                    <span class="status-label">{{ health.status|upper }}</span>
+                </div>
+                <h2>Platform Health & Operational Diagnostics</h2>
+                <p>Real-time architectural check for the Aurevia Motors baseline foundation.</p>
+            </div>
+
+            <div class="health-grid">
+                <div class="health-metric">
+                    <span class="metric-label">Service</span>
+                    <span class="metric-value">{{ health.service }}</span>
+                </div>
+                <div class="health-metric">
+                    <span class="metric-label">Environment</span>
+                    <span class="metric-value text-accent">{{ health.environment }}</span>
+                </div>
+                <div class="health-metric">
+                    <span class="metric-label">Database Connection</span>
+                    <span class="metric-value {% if health.database == 'connected' %}text-success{% else %}text-error{% endif %}">
+                        {{ health.database|title }}
+                    </span>
+                </div>
+                <div class="health-metric">
+                    <span class="metric-label">Timestamp (UTC)</span>
+                    <span class="metric-value font-mono">{{ health.timestamp }}</span>
+                </div>
+            </div>
+
+            <div class="health-actions">
+                <a href="{% url 'core:health' %}?format=json" class="btn btn-secondary" target="_blank">View Raw JSON</a>
+                <a href="{% url 'core:home' %}" class="btn btn-primary">Return to Showroom</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
