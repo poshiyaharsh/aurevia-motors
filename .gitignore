@@ -51,15 +51,13 @@ venv.bak/
 *.secret
 
 # ==============================================================================
-# Deployment & Hosting Infrastructure (Hidden)
+# Containerization & Infrastructure Blueprints (Hidden)
 # ==============================================================================
 Dockerfile
 docker-compose*.yml
 Procfile
 render.yaml
-build.sh
 entrypoint.sh
-gunicorn.conf.py
 nginx.conf*
 runtime.txt
 
