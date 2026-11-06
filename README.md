@@ -1,6 +1,18 @@
 # Aurevia Motors
 
-Aurevia Motors is a luxury supercar digital showroom and e-commerce platform featuring elite marques including Bugatti, Lamborghini, Ferrari, Rolls-Royce, Porsche, and McLaren.
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/poshiyaharsh/aurevia-motors)
+
+Aurevia Motors is a luxury supercar digital showroom and e-commerce platform featuring elite marques including Bugatti, Lamborghini, Ferrari, Rolls-Royce, Porsche, and McLaren. Built with Python 3.12 and Django 5.1, featuring automated on-chain EVM payment verification, responsive atelier showroom, and multi-rail escrow settlement.
+
+---
+
+## 🚀 1-Click Free Deployment on Render
+
+You can deploy Aurevia Motors live to the web with 100% free hosting and automatic SSL on [Render](https://render.com):
+
+1. Click the **Deploy to Render** button above (or connect your GitHub fork on [render.com](https://render.com)).
+2. Render reads [`render.yaml`](render.yaml) and [`build.sh`](build.sh) automatically.
+3. It sets up the Python 3.12 environment, runs migrations, collects compressed WhiteNoise static assets, seeds the 24 hypercars with real studio photography, and gives you a free live `https://<your-subdomain>.onrender.com` URL!
 
 ---
 

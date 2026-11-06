@@ -19,6 +19,7 @@ if SECRET_KEY.startswith('django-insecure-'):
     raise ValueError("Production environment must set a secure DJANGO_SECRET_KEY in .env")
 
 # HTTPS and Security Headers
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
