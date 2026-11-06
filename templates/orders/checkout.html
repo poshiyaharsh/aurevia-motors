@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}Acquisition Checkout & Settlement — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+    <div class="catalog-hero">
+        <div class="container">
+            <span class="section-tag">FINAL SETTLEMENT</span>
+            <h1 class="catalog-title">Acquisition Checkout</h1>
+            <p class="catalog-subtitle">
+                Select your white-glove delivery domicile and verified settlement protocol.
+            </p>
+        </div>
+    </div>
+
+    <div class="container section">
+        <form method="post" action="{% url 'orders:checkout_process' %}" id="checkout-form">
+            {% csrf_token %}
+            <div class="cart-layout">
+                <!-- Left Column: Address Selection & Payment Methods -->
+                <div class="cart-items-container">
+                    
+                    <!-- Section 1: Delivery Domicile / Address -->
+                    <div class="account-card" style="margin-bottom: 30px;">
+                        <div class="card-header-styled">
+                            <h2>1. Delivery Domicile & Title Registration</h2>
+                        </div>
+
+                        {% if user_addresses %}
+                        <div class="address-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                            {% for addr in user_addresses %}
+                            <label class="address-select-card" style="display: block; border: 1px solid var(--border-color); border-radius: 4px; padding: 16px; cursor: pointer; background: var(--surface-card); transition: var(--transition-fast);">
+                                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                    <input 
+                                        type="radio" 
+                                        name="address_id" 
+                                        value="{{ addr.id }}" 
+                                        {% if default_address and default_address.id == addr.id %}checked{% endif %}
+                                        style="margin-top: 4px;"
+                                        onchange="toggleAddressFields(false);"
+                                    >
+                                    <div>
+                                        <strong style="color: var(--text-primary); font-size: 0.95rem;">{{ addr.full_name }}</strong>
+                                        {% if addr.is_default %}
+                                        <span class="cart-count-pill" style="margin-left: 6px; font-size: 0.7rem;">Default</span>
+                                        {% endif %}
+                                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 6px 0 0;">
+                                            {{ addr.street_line_1 }}{% if addr.street_line_2 %}, {{ addr.street_line_2 }}{% endif %}<br>
+                                            {{ addr.city }}, {{ addr.state_or_province }} {{ addr.postal_code }}<br>
+                                            {{ addr.country }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </label>
+                            {% endfor %}
+
+                            <label class="address-select-card" style="display: block; border: 1px dashed var(--border-color); border-radius: 4px; padding: 16px; cursor: pointer; background: rgba(10, 10, 12, 0.4);">
+                                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                    <input 
+                                        type="radio" 
+                                        name="address_id" 
+                                        value="" 
+                                        id="new-address-radio"
+                                        style="margin-top: 4px;"
+                                        onchange="toggleAddressFields(true);"
+                                    >
+                                    <div>
+                                        <strong style="color: var(--accent-gold); font-size: 0.95rem;">+ Deliver to a Different Domicile</strong>
+                                        <p style="color: var(--text-muted); font-size: 0.8rem; margin: 4px 0 0;">Enter destination coordinates for this order.</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        {% endif %}
+
+                        <!-- Manual Address Form (shown if no saved addresses or new address selected) -->
+                        <div id="manual-address-fields" style="{% if user_addresses %}display: none;{% endif %} border-top: 1px solid var(--border-color-subtle); padding-top: 20px;">
+                            <h4 style="color: var(--accent-gold); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 16px;">Domicile Coordinates</h4>
+                            
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                                <div class="form-group">
+                                    <label class="form-label">Full Legal Name *</label>
+                                    <input type="text" name="full_name" class="form-input" placeholder="e.g. Lord Sterling Beaumont">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Phone Number *</label>
+                                    <input type="text" name="phone" class="form-input" placeholder="+1 (555) 019-2834">
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label">Address Line 1 *</label>
+                                <input type="text" name="address_line_1" class="form-input" placeholder="Street Address, Private Estate, or Penthouse Suite">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label">Address Line 2 (Optional)</label>
+                                <input type="text" name="address_line_2" class="form-input" placeholder="Hangar, Wing, Gate Code">
+                            </div>
+
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                                <div class="form-group">
+                                    <label class="form-label">City *</label>
+                                    <input type="text" name="city" class="form-input" placeholder="Monaco">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">State / Province</label>
+                                    <input type="text" name="state_province" class="form-input" placeholder="Monte Carlo">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Postal Code *</label>
+                                    <input type="text" name="postal_code" class="form-input" placeholder="98000">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Country / Jurisdiction *</label>
+                                <input type="text" name="country" class="form-input" placeholder="Monaco">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Settlement Method Selection -->
+                    <div class="account-card" style="margin-bottom: 30px;">
+                        <div class="card-header-styled">
+                            <h2>2. Settlement Rail Selection</h2>
+                        </div>
+
+                        <div class="payment-methods-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <!-- Bank Wire & Concierge Escrow -->
+                            <label class="payment-method-card" style="display: block; border: 1px solid var(--border-color); border-radius: 4px; padding: 20px; cursor: pointer; background: var(--surface-card); transition: var(--transition-fast);">
+                                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                                    <input type="radio" name="payment_method" value="bank_wire" checked style="margin-top: 4px;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                            <strong style="color: var(--text-primary); font-size: 1rem;">Concierge Escrow & Bank Wire</strong>
+                                            <span class="cart-count-pill" style="font-size: 0.68rem;">Traditional</span>
+                                        </div>
+                                        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin: 0;">
+                                            Settlement through Aurevia Private Client Escrow. Wire instructions and unique escrow code generated immediately upon order placement.
+                                        </p>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Web3 / Ethereum MetaMask -->
+                            <label class="payment-method-card" style="display: block; border: 1px solid var(--border-color); border-radius: 4px; padding: 20px; cursor: pointer; background: var(--surface-card); transition: var(--transition-fast);">
+                                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                                    <input type="radio" name="payment_method" value="crypto_ethereum" style="margin-top: 4px;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                            <strong style="color: var(--accent-gold); font-size: 1rem;">Web3 / MetaMask Ethereum</strong>
+                                            <span class="cart-count-pill" style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.15); color: #818cf8; border-color: rgba(99, 102, 241, 0.3);">EVM On-Chain</span>
+                                        </div>
+                                        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin: 0;">
+                                            Direct peer-to-peer cryptographic settlement. Connect MetaMask or browser wallet with zero-trust backend on-chain transaction verification.
+                                        </p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Concierge Delivery Notes -->
+                    <div class="account-card">
+                        <div class="card-header-styled">
+                            <h2>3. Bespoke Concierge Instructions (Optional)</h2>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Special Delivery & Unloading Requirements</label>
+                            <textarea 
+                                name="client_notes" 
+                                rows="3" 
+                                class="form-input" 
+                                placeholder="e.g. Enclosed transporter ramp height constraints, private security clearance, or specific handover dates."
+                            ></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Order Summary & Execution -->
+                <aside class="cart-summary-sidebar">
+                    <div class="acquisition-card">
+                        <div class="card-header-styled">
+                            <h2>Acquisition Review</h2>
+                            <span class="cart-count-pill">{{ cart|length }} unit{{ cart|length|pluralize }}</span>
+                        </div>
+
+                        <!-- Item mini list -->
+                        <div style="margin-bottom: 16px; border-bottom: 1px solid var(--border-color-subtle); padding-bottom: 12px;">
+                            {% for item in cart %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.85rem;">
+                                <div>
+                                    <strong style="color: var(--text-primary);">{{ item.vehicle.year }} {{ item.vehicle.brand.name }}</strong>
+                                    <div style="color: var(--text-muted); font-size: 0.78rem;">{{ item.vehicle.model_name }} &times; {{ item.quantity }}</div>
+                                </div>
+                                <span class="font-mono" style="color: var(--accent-gold);">
+                                    USD {{ item.total_price|intcomma }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="summary-line-row">
+                            <span class="summary-label">Subtotal</span>
+                            <span class="summary-value font-mono">
+                                USD {{ calculation.subtotal|intcomma }}
+                            </span>
+                        </div>
+
+                        {% if calculation.has_discount %}
+                        <div class="summary-line-row discount-row">
+                            <span class="summary-label">Voucher Concession ({{ calculation.coupon.code }})</span>
+                            <span class="summary-value font-mono">
+                                - USD {{ calculation.discount_amount|intcomma }}
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <div class="summary-line-row">
+                            <span class="summary-label">White-Glove Transport</span>
+                            <span class="summary-value text-accent">
+                                {% if calculation.delivery_fee > 0 %}
+                                USD {{ calculation.delivery_fee|intcomma }}
+                                {% else %}
+                                Complimentary
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="summary-line-row">
+                            <span class="summary-label">Duties & Escrow Title</span>
+                            <span class="summary-value text-accent">
+                                {% if calculation.tax_amount > 0 %}
+                                USD {{ calculation.tax_amount|intcomma }}
+                                {% else %}
+                                Included
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="summary-total-divider"></div>
+
+                        <div class="summary-total-row">
+                            <span class="total-label">Final Valuation</span>
+                            <div class="total-amount-box">
+                                <span class="curr">USD</span>
+                                <span class="amt">{{ calculation.grand_total|intcomma }}</span>
+                            </div>
+                        </div>
+
+                        <div class="cart-checkout-actions" style="margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary btn-block btn-acquire">
+                                Place Order & Proceed to Settlement &rarr;
+                            </button>
+                        </div>
+
+                        <div class="atelier-guarantees">
+                            <div class="guarantee-item">
+                                <span class="guarantee-icon">🛡</span>
+                                <div class="guarantee-text">
+                                    <strong>Authoritative Server Valuation</strong>
+                                    <p>Prices locked against database records. Zero client tampering.</p>
+                                </div>
+                            </div>
+                            <div class="guarantee-item">
+                                <span class="guarantee-icon">🔒</span>
+                                <div class="guarantee-text">
+                                    <strong>Zero Private Key Exposure</strong>
+                                    <p>Non-custodial cryptographic verification. No wallet secrets ever requested.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleAddressFields(showManual) {
+    var manualDiv = document.getElementById('manual-address-fields');
+    if (manualDiv) {
+        manualDiv.style.display = showManual ? 'block' : 'none';
+    }
+}
+</script>
+{% endblock %}

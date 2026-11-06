@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}Acquisition Confirmed — Order {{ order.order_number }} — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="confirmation-page">
+    <div class="catalog-hero">
+        <div class="container text-center">
+            <span class="section-tag" style="color: #10b981;">ACQUISITION PROTOCOL RECORDED</span>
+            <h1 class="catalog-title">Order Confirmed</h1>
+            <p class="catalog-subtitle">
+                Order <strong class="font-mono text-accent">{{ order.order_number }}</strong> has been officially registered in the Aurevia Motors Atelier.
+            </p>
+        </div>
+    </div>
+
+    <div class="container section">
+        <div style="max-width: 900px; margin: 0 auto;">
+            <!-- Status Card -->
+            <div class="account-card" style="margin-bottom: 24px; text-align: center; padding: 36px 24px;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(212, 175, 55, 0.15); border: 2px solid var(--accent-gold); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.8rem; color: var(--accent-gold);">
+                    ✓
+                </div>
+                <h2 style="font-size: 1.4rem; color: var(--text-primary); margin-bottom: 8px;">
+                    Allocation Reserved & Escrow Initiated
+                </h2>
+                <p style="color: var(--text-secondary); max-width: 580px; margin: 0 auto 20px; font-size: 0.95rem; line-height: 1.6;">
+                    Thank you for choosing Aurevia Motors. Your supercar allocation has been secured. Our Private Client Concierge is preparing your provenance portfolio and escrow verification.
+                </p>
+
+                <div style="display: inline-flex; gap: 16px; align-items: center; justify-content: center; background: rgba(10, 10, 12, 0.6); border: 1px solid var(--border-color); border-radius: 4px; padding: 10px 20px;">
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Order Status:</span>
+                        <strong style="color: var(--accent-gold); margin-left: 6px;">{{ order.get_status_display }}</strong>
+                    </div>
+                    <div style="width: 1px; height: 18px; background: var(--border-color-subtle);"></div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Settlement Rail:</span>
+                        <strong style="color: var(--text-primary); margin-left: 6px;">{{ payment.get_payment_method_display }}</strong>
+                    </div>
+                    <div style="width: 1px; height: 18px; background: var(--border-color-subtle);"></div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Payment Status:</span>
+                        <strong style="color: #10b981; margin-left: 6px;">{{ payment.get_status_display }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Details Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <!-- Domicile Details -->
+                <div class="account-card">
+                    <div class="card-header-styled">
+                        <h2>Title & Handover Domicile</h2>
+                    </div>
+                    <p style="color: var(--text-primary); font-size: 0.9rem; line-height: 1.6; margin: 0;">
+                        <strong>{{ order.shipping_full_name }}</strong><br>
+                        {{ order.shipping_address_line_1 }}<br>
+                        {% if order.shipping_address_line_2 %}{{ order.shipping_address_line_2 }}<br>{% endif %}
+                        {{ order.shipping_city }}, {{ order.shipping_state_province }} {{ order.shipping_postal_code }}<br>
+                        {{ order.shipping_country }}<br>
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">Contact: {{ order.shipping_phone }}</span>
+                    </p>
+                </div>
+
+                <!-- Settlement Breakdown -->
+                <div class="account-card">
+                    <div class="card-header-styled">
+                        <h2>Settlement Record</h2>
+                    </div>
+                    <div class="summary-line-row">
+                        <span class="summary-label">Subtotal</span>
+                        <span class="summary-value font-mono">USD {{ order.subtotal|intcomma }}</span>
+                    </div>
+                    {% if order.discount_amount > 0 %}
+                    <div class="summary-line-row discount-row">
+                        <span class="summary-label">Voucher Concession</span>
+                        <span class="summary-value font-mono">- USD {{ order.discount_amount|intcomma }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="summary-line-row">
+                        <span class="summary-label">White-Glove Transport</span>
+                        <span class="summary-value text-accent">
+                            {% if order.delivery_fee > 0 %}USD {{ order.delivery_fee|intcomma }}{% else %}Complimentary{% endif %}
+                        </span>
+                    </div>
+                    <div class="summary-line-row">
+                        <span class="summary-label">Duties & Title Escrow</span>
+                        <span class="summary-value text-accent">
+                            {% if order.tax_amount > 0 %}USD {{ order.tax_amount|intcomma }}{% else %}Included{% endif %}
+                        </span>
+                    </div>
+                    <div class="summary-total-divider"></div>
+                    <div class="summary-total-row">
+                        <span class="total-label">Grand Valuation</span>
+                        <div class="total-amount-box">
+                            <span class="curr">USD</span>
+                            <span class="amt">{{ order.grand_total|intcomma }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items Card -->
+            <div class="account-card" style="margin-bottom: 24px;">
+                <div class="card-header-styled">
+                    <h2>Acquired Hypercars</h2>
+                </div>
+                <div class="cart-items-list">
+                    {% for item in order.items.all %}
+                    <div class="cart-item-card" style="padding: 12px 0;">
+                        <div class="cart-item-info">
+                            <span class="cart-item-brand">{{ item.vehicle_brand_name }}</span>
+                            <h3 class="cart-item-title" style="font-size: 1.1rem;">
+                                {{ item.vehicle_year }} {{ item.vehicle_model_name }}
+                            </h3>
+                            {% if item.vehicle_vin %}
+                            <span class="cart-item-vin">VIN: {{ item.vehicle_vin }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="cart-item-price">
+                            <span class="curr">{{ order.currency }}</span>
+                            <span class="amt">{{ item.unit_price|intcomma }}</span>
+                        </div>
+                        <div class="cart-item-qty">
+                            <span>Qty: {{ item.quantity }}</span>
+                        </div>
+                        <div class="cart-item-total">
+                            <span class="curr">{{ order.currency }}</span>
+                            <span class="amt">{{ item.line_total|intcomma }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Concierge Handover Notice -->
+            <div class="account-card" style="margin-bottom: 30px;">
+                <div class="card-header-styled">
+                    <h2>Next Steps & Concierge Handover Protocol</h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 10px;">
+                    <div style="padding: 14px; background: rgba(10, 10, 12, 0.4); border-radius: 4px; border: 1px solid var(--border-color-subtle);">
+                        <strong style="color: var(--accent-gold); display: block; margin-bottom: 6px;">1. Escrow Settlement</strong>
+                        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0; line-height: 1.4;">
+                            Upon clearance of wire or on-chain settlement, your allocation moves to final vehicle preparation.
+                        </p>
+                    </div>
+                    <div style="padding: 14px; background: rgba(10, 10, 12, 0.4); border-radius: 4px; border: 1px solid var(--border-color-subtle);">
+                        <strong style="color: var(--accent-gold); display: block; margin-bottom: 6px;">2. Title & Provenance</strong>
+                        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0; line-height: 1.4;">
+                            Our legal concierge completes ownership registration, manufacturer provenance docs, and bill of sale.
+                        </p>
+                    </div>
+                    <div style="padding: 14px; background: rgba(10, 10, 12, 0.4); border-radius: 4px; border: 1px solid var(--border-color-subtle);">
+                        <strong style="color: var(--accent-gold); display: block; margin-bottom: 6px;">3. Enclosed Handover</strong>
+                        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0; line-height: 1.4;">
+                            White-glove climate-controlled transporter dispatch directly to your specified estate or hangar.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 16px;">
+                <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">
+                    View Atelier Profile
+                </a>
+                <a href="{% url 'catalog:vehicle_list' %}" class="btn btn-primary">
+                    Explore More Supercars
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

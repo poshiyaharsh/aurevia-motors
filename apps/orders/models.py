@@ -1,4 +1,6 @@
 from decimal import Decimal, ROUND_HALF_UP
+import uuid
+from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -175,3 +177,256 @@ class Coupon(models.Model):
         discount = min(raw_discount, subtotal)
         discount = max(Decimal('0.00'), discount)
         return discount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+
+class Order(models.Model):
+    """
+    Authoritative order record for luxury vehicle acquisitions.
+    Stores immutable snapshots of client details, delivery address, line items, and server pricing.
+    """
+    STATUS_PENDING = 'pending'
+    STATUS_AWAITING_PAYMENT = 'awaiting_payment'
+    STATUS_PAID = 'paid'
+    STATUS_PROCESSING = 'processing'
+    STATUS_COMPLETED = 'completed'
+    STATUS_CANCELLED = 'cancelled'
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending Checkout'),
+        (STATUS_AWAITING_PAYMENT, 'Awaiting Settlement'),
+        (STATUS_PAID, 'Payment Confirmed / Paid'),
+        (STATUS_PROCESSING, 'Allocation Processing & Title Prep'),
+        (STATUS_COMPLETED, 'Delivery Completed'),
+        (STATUS_CANCELLED, 'Cancelled'),
+    ]
+
+    order_number = models.CharField(
+        max_length=32,
+        unique=True,
+        db_index=True,
+        editable=False,
+        help_text="Unique atelier order identification number (e.g. AUM-20261106-ABCD12)."
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='orders',
+        help_text="Acquiring customer."
+    )
+    status = models.CharField(
+        max_length=24,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True
+    )
+
+    # Delivery Address Snapshot (immutable historical record)
+    shipping_full_name = models.CharField(max_length=150)
+    shipping_phone = models.CharField(max_length=32)
+    shipping_address_line_1 = models.CharField(max_length=255)
+    shipping_address_line_2 = models.CharField(max_length=255, blank=True)
+    shipping_city = models.CharField(max_length=100)
+    shipping_state_province = models.CharField(max_length=100)
+    shipping_postal_code = models.CharField(max_length=20)
+    shipping_country = models.CharField(max_length=100)
+
+    # Financial breakdown snapshot (immutable Decimal records)
+    subtotal = models.DecimalField(max_digits=14, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    tax_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    delivery_fee = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    grand_total = models.DecimalField(max_digits=14, decimal_places=2)
+    currency = models.CharField(max_length=3, default='USD')
+
+    coupon = models.ForeignKey(
+        Coupon,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='orders'
+    )
+    coupon_code_snapshot = models.CharField(max_length=30, blank=True)
+
+    client_notes = models.TextField(blank=True, help_text="Special concierge handling or delivery instructions.")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Atelier Acquisition Order'
+        verbose_name_plural = 'Atelier Acquisition Orders'
+
+    def __str__(self):
+        return f"Order {self.order_number} ({self.get_status_display()}) - {self.currency} {self.grand_total:,.2f}"
+
+    @classmethod
+    def generate_order_number(cls):
+        date_str = timezone.now().strftime('%Y%m%d')
+        unique_suffix = uuid.uuid4().hex[:6].upper()
+        return f"AUM-{date_str}-{unique_suffix}"
+
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            self.order_number = self.generate_order_number()
+        super().save(*args, **kwargs)
+
+
+class OrderItem(models.Model):
+    """
+    Immutable historical line item snapshot for an atelier order.
+    Preserves exact purchase-time vehicle specifications and unit prices.
+    """
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='items'
+    )
+    vehicle = models.ForeignKey(
+        'catalog.Vehicle',
+        on_delete=models.PROTECT,
+        related_name='order_items'
+    )
+    # Immutable historical vehicle snapshot
+    vehicle_model_name = models.CharField(max_length=150)
+    vehicle_brand_name = models.CharField(max_length=100)
+    vehicle_year = models.PositiveIntegerField()
+    vehicle_vin = models.CharField(max_length=17, blank=True, default='')
+
+    unit_price = models.DecimalField(max_digits=14, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=1)
+    line_total = models.DecimalField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        verbose_name = 'Order Line Item'
+        verbose_name_plural = 'Order Line Items'
+
+    def __str__(self):
+        return f"{self.quantity}x {self.vehicle_year} {self.vehicle_brand_name} {self.vehicle_model_name}"
+
+
+class Payment(models.Model):
+    """
+    Cryptographic and escrow payment ledger record.
+    Tracks multi-rail transactions with replay prevention, status state machines,
+    and audit trails.
+    """
+    METHOD_BANK_WIRE = 'bank_wire'
+    METHOD_CRYPTO_ETH = 'crypto_ethereum'
+
+    PAYMENT_METHOD_CHOICES = [
+        (METHOD_BANK_WIRE, 'Concierge Escrow & Bank Wire'),
+        (METHOD_CRYPTO_ETH, 'Web3 / MetaMask Ethereum Settlement'),
+    ]
+
+    STATUS_PENDING = 'pending'
+    STATUS_SUBMITTED = 'submitted'
+    STATUS_VERIFYING = 'verifying'
+    STATUS_CONFIRMED = 'confirmed'
+    STATUS_FAILED = 'failed'
+    STATUS_REFUNDED = 'refunded'
+
+    PAYMENT_STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending Action'),
+        (STATUS_SUBMITTED, 'Settlement Submitted by Client'),
+        (STATUS_VERIFYING, 'Verifying On-Chain / Banking Receipt'),
+        (STATUS_CONFIRMED, 'Confirmed & Cleared'),
+        (STATUS_FAILED, 'Verification Failed / Rejected'),
+        (STATUS_REFUNDED, 'Refunded'),
+    ]
+
+    order = models.OneToOneField(
+        Order,
+        on_delete=models.PROTECT,
+        related_name='payment',
+        help_text="Order associated with this payment record."
+    )
+    payment_method = models.CharField(
+        max_length=30,
+        choices=PAYMENT_METHOD_CHOICES,
+        default=METHOD_BANK_WIRE
+    )
+    amount = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        help_text="Authoritative server-calculated settlement amount."
+    )
+    currency = models.CharField(max_length=3, default='USD')
+    status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True
+    )
+    escrow_reference = models.CharField(
+        max_length=40,
+        unique=True,
+        db_index=True,
+        help_text="Unique atelier escrow reference code for wire identification."
+    )
+    transaction_hash = models.CharField(
+        max_length=120,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Blockchain transaction hash (EVM tx hash, unique to prevent replay attacks)."
+    )
+    wallet_address = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="Public wallet address initiating payment (NEVER store private keys)."
+    )
+    chain_id = models.CharField(
+        max_length=32,
+        blank=True,
+        help_text="Target EVM chain ID where transaction was broadcast."
+    )
+    verification_notes = models.TextField(
+        blank=True,
+        help_text="Audit and verification logs from banking or RPC queries."
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Payment Settlement Record'
+        verbose_name_plural = 'Payment Settlement Records'
+
+    def __str__(self):
+        return f"Payment {self.escrow_reference} for Order {self.order.order_number} ({self.get_status_display()})"
+
+    @classmethod
+    def generate_escrow_reference(cls):
+        date_str = timezone.now().strftime('%Y%m%d')
+        unique_suffix = uuid.uuid4().hex[:6].upper()
+        return f"ESC-{date_str}-{unique_suffix}"
+
+    def save(self, *args, **kwargs):
+        if not self.escrow_reference:
+            self.escrow_reference = self.generate_escrow_reference()
+        super().save(*args, **kwargs)
+
+    def mark_as_confirmed(self, notes=None):
+        """
+        Transitions payment to CONFIRMED status and marks parent order as PAID.
+        """
+        self.status = self.STATUS_CONFIRMED
+        self.verified_at = timezone.now()
+        if notes:
+            self.verification_notes = notes
+        self.save()
+
+        # Update parent order
+        self.order.status = Order.STATUS_PAID
+        self.order.save()
+
+    def mark_as_failed(self, reason):
+        """
+        Transitions payment to FAILED status with recorded reason.
+        """
+        self.status = self.STATUS_FAILED
+        self.verification_notes = reason
+        self.save()
+

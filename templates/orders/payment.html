@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}Settlement Protocol — Order {{ order.order_number }} — Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="payment-page">
+    <div class="catalog-hero">
+        <div class="container">
+            <span class="section-tag">ESCROW & SETTLEMENT PROTOCOL</span>
+            <h1 class="catalog-title">Order Settlement</h1>
+            <p class="catalog-subtitle">
+                Acquisition Order <strong class="text-accent">{{ order.order_number }}</strong> — Amount Due: <strong class="font-mono text-accent">USD ${{ order.grand_total|intcomma }}</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="container section">
+        <div class="cart-layout">
+            <!-- Left Column: Payment Rail Interface -->
+            <div class="cart-items-container">
+
+                {% if payment.payment_method == 'bank_wire' %}
+                <!-- Bank Wire & Concierge Escrow Rail -->
+                <div class="account-card" style="margin-bottom: 24px;">
+                    <div class="card-header-styled">
+                        <h2>Concierge Escrow & Bank Wire Instructions</h2>
+                        <span class="cart-count-pill" style="font-size: 0.8rem;">Status: {{ payment.get_status_display }}</span>
+                    </div>
+
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
+                        To secure your vehicle allocation, please dispatch an electronic wire transfer using the coordinates below. 
+                        Funds are held in neutral escrow until pre-delivery title and transport verification.
+                    </p>
+
+                    <div style="background: rgba(10, 10, 12, 0.7); border: 1px solid var(--border-color); border-radius: 4px; padding: 20px; margin-bottom: 24px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Beneficiary Institution</span>
+                                <div style="color: var(--text-primary); font-weight: 600;">JPMorgan Chase Private Bank, N.A.</div>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Account Holder</span>
+                                <div style="color: var(--text-primary); font-weight: 600;">Aurevia Motors Global Client Escrow LLC</div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">SWIFT / BIC Code</span>
+                                <div class="font-mono" style="color: var(--accent-gold); font-weight: 700;">CHASUS33XXX</div>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Fedwire / ABA Routing</span>
+                                <div class="font-mono" style="color: var(--accent-gold); font-weight: 700;">021000021</div>
+                            </div>
+                        </div>
+
+                        <div style="border-top: 1px dashed var(--border-color-subtle); padding-top: 14px; margin-top: 10px;">
+                            <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Mandatory Wire Memo / Reference</span>
+                            <div class="font-mono" style="color: var(--accent-gold-light); font-size: 1.15rem; font-weight: 700; margin-top: 4px;">
+                                {{ payment.escrow_reference }} / {{ order.order_number }}
+                            </div>
+                            <small style="color: var(--text-secondary); display: block; margin-top: 4px;">
+                                You must include this exact memo code with your wire transfer to guarantee instantaneous allocation matching.
+                            </small>
+                        </div>
+                    </div>
+
+                    {% if payment.status == 'pending' %}
+                    <form method="post" action="{% url 'orders:payment_confirm_wire' order.order_number %}">
+                        {% csrf_token %}
+                        <div style="display: flex; gap: 16px; align-items: center;">
+                            <button type="submit" class="btn btn-primary" style="padding: 12px 28px;">
+                                ✓ I Have Initiated This Wire Transfer
+                            </button>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                Transfers clear in 1–2 business days.
+                            </span>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div style="padding: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 4px;">
+                        <strong style="color: #10b981;">✓ Wire Initiation Acknowledged</strong>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0;">
+                            Your confirmation has been received. Aurevia Concierge is tracking your wire transfer.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% else %}
+                <!-- Web3 / Ethereum MetaMask Rail -->
+                <div class="account-card" style="margin-bottom: 24px;">
+                    <div class="card-header-styled">
+                        <h2>Web3 / MetaMask Cryptographic Settlement</h2>
+                        <span class="cart-count-pill" style="font-size: 0.8rem; background: rgba(99, 102, 241, 0.15); color: #818cf8; border-color: rgba(99, 102, 241, 0.3);">EVM Settlement</span>
+                    </div>
+
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
+                        Connect your non-custodial browser wallet (MetaMask or compatible EIP-1193 provider) to broadcast your settlement transaction.
+                    </p>
+
+                    <!-- MetaMask Integration Widget -->
+                    <div style="background: rgba(10, 10, 12, 0.7); border: 1px solid var(--border-color); border-radius: 4px; padding: 20px; margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">MetaMask Provider Status</span>
+                                <div id="wallet-status" style="color: var(--text-primary); font-weight: 600;">Not Connected</div>
+                            </div>
+                            <button type="button" id="btn-connect-wallet" class="btn btn-secondary btn-sm" onclick="connectMetaMask();">
+                                🦊 Connect MetaMask
+                            </button>
+                        </div>
+
+                        <div id="wallet-address-container" style="display: none; margin-bottom: 16px; padding: 10px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 4px;">
+                            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Connected Signer</span>
+                            <div id="connected-account" class="font-mono" style="color: #818cf8; font-size: 0.85rem; word-break: break-all;"></div>
+                        </div>
+
+                        <div style="border-top: 1px solid var(--border-color-subtle); padding-top: 14px;">
+                            <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Atelier Settlement Destination</span>
+                            <div class="font-mono" style="color: var(--accent-gold); font-size: 0.88rem; word-break: break-all; margin-top: 4px;">
+                                {% if settlement_address %}
+                                {{ settlement_address }}
+                                {% else %}
+                                Configured in Server Environment (RPC Destination)
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submission of Transaction Hash for Zero-Trust Verification -->
+                    <form method="post" action="{% url 'orders:payment_verify_crypto' order.order_number %}" style="margin-bottom: 20px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="wallet_address" id="form-wallet-address" value="">
+                        <input type="hidden" name="chain_id" id="form-chain-id" value="">
+
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">Ethereum Transaction Hash (TxHash) *</label>
+                            <input 
+                                type="text" 
+                                name="tx_hash" 
+                                id="input-tx-hash"
+                                class="form-input font-mono" 
+                                placeholder="0x..." 
+                                maxlength="120"
+                                required
+                            >
+                            <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">
+                                Broadcast your transfer through MetaMask, then paste the 66-character transaction hash here.
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="padding: 12px 28px;">
+                            ⚡ Verify Transaction On-Chain
+                        </button>
+                    </form>
+
+                    <!-- Cryptographic Guardrail Notice -->
+                    <div style="padding: 14px; background: rgba(212, 175, 55, 0.06); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 4px;">
+                        <strong style="color: var(--accent-gold); font-size: 0.85rem;">🛡 Server-Side Cryptographic Guardrails</strong>
+                        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 6px 0 0; line-height: 1.5;">
+                            Aurevia Motors never requests or stores your private key or seed phrase. All submitted transactions are validated on-chain via our trusted RPC node. If network nodes are unconfigured, transactions are safely queued for manual concierge review without false simulated successes.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Order Item Allocation Review -->
+                <div class="account-card">
+                    <div class="card-header-styled">
+                        <h2>Allocated Supercars ({{ order.items.count }} Line Item{{ order.items.count|pluralize }})</h2>
+                    </div>
+                    <div class="cart-items-list">
+                        {% for item in order.items.all %}
+                        <div class="cart-item-card" style="padding: 12px 0;">
+                            <div class="cart-item-info">
+                                <span class="cart-item-brand">{{ item.vehicle_brand_name }}</span>
+                                <h3 class="cart-item-title" style="font-size: 1.05rem;">
+                                    {{ item.vehicle_year }} {{ item.vehicle_model_name }}
+                                </h3>
+                                {% if item.vehicle_vin %}
+                                <span class="cart-item-vin">VIN: {{ item.vehicle_vin }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="cart-item-price">
+                                <span class="curr">{{ order.currency }}</span>
+                                <span class="amt">{{ item.unit_price|intcomma }}</span>
+                            </div>
+                            <div class="cart-item-qty">
+                                <span>Qty: {{ item.quantity }}</span>
+                            </div>
+                            <div class="cart-item-total">
+                                <span class="curr">{{ order.currency }}</span>
+                                <span class="amt">{{ item.line_total|intcomma }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Settlement Financial Summary -->
+            <aside class="cart-summary-sidebar">
+                <div class="acquisition-card">
+                    <div class="card-header-styled">
+                        <h2>Settlement Summary</h2>
+                        <span class="cart-count-pill" style="font-size: 0.75rem;">{{ order.get_status_display }}</span>
+                    </div>
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">Vehicles Subtotal</span>
+                        <span class="summary-value font-mono">
+                            USD {{ order.subtotal|intcomma }}
+                        </span>
+                    </div>
+
+                    {% if order.discount_amount > 0 %}
+                    <div class="summary-line-row discount-row">
+                        <span class="summary-label">Voucher Concession</span>
+                        <span class="summary-value font-mono">
+                            - USD {{ order.discount_amount|intcomma }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">White-Glove Transport</span>
+                        <span class="summary-value text-accent">
+                            {% if order.delivery_fee > 0 %}
+                            USD {{ order.delivery_fee|intcomma }}
+                            {% else %}
+                            Complimentary
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">Escrow Title & Duties</span>
+                        <span class="summary-value text-accent">
+                            {% if order.tax_amount > 0 %}
+                            USD {{ order.tax_amount|intcomma }}
+                            {% else %}
+                            Included
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="summary-total-divider"></div>
+
+                    <div class="summary-total-row">
+                        <span class="total-label">Settlement Total</span>
+                        <div class="total-amount-box">
+                            <span class="curr">USD</span>
+                            <span class="amt">{{ order.grand_total|intcomma }}</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; border-top: 1px solid var(--border-color-subtle); padding-top: 16px;">
+                        <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">Delivery Domicile</span>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0; line-height: 1.4;">
+                            <strong>{{ order.shipping_full_name }}</strong><br>
+                            {{ order.shipping_address_line_1 }}<br>
+                            {{ order.shipping_city }}, {{ order.shipping_state_province }} {{ order.shipping_postal_code }}<br>
+                            {{ order.shipping_country }}
+                        </p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+
+<script>
+async function connectMetaMask() {
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            if (accounts.length > 0) {
+                const account = accounts[0];
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                
+                document.getElementById('wallet-status').innerText = 'Connected';
+                document.getElementById('wallet-status').style.color = '#10b981';
+                document.getElementById('connected-account').innerText = account;
+                document.getElementById('wallet-address-container').style.display = 'block';
+                document.getElementById('btn-connect-wallet').innerText = '✓ Wallet Linked';
+                document.getElementById('btn-connect-wallet').classList.remove('btn-secondary');
+                document.getElementById('btn-connect-wallet').classList.add('btn-primary');
+                
+                document.getElementById('form-wallet-address').value = account;
+                document.getElementById('form-chain-id').value = chainId;
+            }
+        } catch (err) {
+            alert('MetaMask connection request rejected: ' + err.message);
+        }
+    } else {
+        alert('MetaMask or an EIP-1193 compatible Web3 browser extension was not detected. Please install MetaMask to use Web3 settlement, or select Concierge Escrow & Bank Wire.');
+    }
+}
+</script>
+{% endblock %}
