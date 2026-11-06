@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Client Atelier Portal — {{ user.get_full_name|default:user.username }} | Aurevia Motors{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="catalog-hero">
+        <div class="container">
+            <span class="section-tag">PRIVATE CLIENT ATELIER</span>
+            <h1 class="catalog-title">{{ user.get_full_name|default:user.username }}</h1>
+            <p class="catalog-subtitle">
+                Client Portal Identifier: <code>{{ user.username }}</code> &bull; Member since {{ user.date_joined|date:"F Y" }}
+            </p>
+        </div>
+    </div>
+
+    <div class="container section">
+        <div class="profile-layout">
+            <!-- Left Column: Profile Settings Form -->
+            <div class="profile-card">
+                <div class="card-header-styled">
+                    <h2>Client Profile & Preferences</h2>
+                    <span class="verification-badge {% if profile.is_verified_collector %}verified{% else %}standard{% endif %}">
+                        {% if profile.is_verified_collector %}Verified Collector{% else %}Standard Membership{% endif %}
+                    </span>
+                </div>
+
+                <form method="post" action="{% url 'accounts:profile' %}" class="profile-form">
+                    {% csrf_token %}
+
+                    <div class="form-row-dual">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}<span class="field-error">{{ form.first_name.errors.0 }}</span>{% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}<span class="field-error">{{ form.last_name.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Primary Email</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<span class="field-error">{{ form.email.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-row-dual">
+                        <div class="form-group">
+                            <label class="form-label">Concierge Phone</label>
+                            {{ form.phone_number }}
+                            {% if form.phone_number.errors %}<span class="field-error">{{ form.phone_number.errors.0 }}</span>{% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Preferred Currency</label>
+                            {{ form.preferred_currency }}
+                            {% if form.preferred_currency.errors %}<span class="field-error">{{ form.preferred_currency.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Communication Channel</label>
+                        {{ form.preferred_contact_method }}
+                        {% if form.preferred_contact_method.errors %}<span class="field-error">{{ form.preferred_contact_method.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Collector Preferences & Specific Marque Inquiries</label>
+                        {{ form.collector_preferences }}
+                        {% if form.collector_preferences.errors %}<span class="field-error">{{ form.collector_preferences.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Profile Preferences</button>
+                </form>
+            </div>
+
+            <!-- Right Column: Destination Addresses -->
+            <div class="addresses-sidebar">
+                <div class="card-header-styled">
+                    <h2>Destination Address Book</h2>
+                    <a href="{% url 'accounts:address_create' %}" class="btn btn-secondary btn-sm">+ Add Address</a>
+                </div>
+
+                <div class="addresses-list">
+                    {% for address in addresses %}
+                    <div class="address-card {% if address.is_default %}default-address-card{% endif %}">
+                        <div class="address-header">
+                            <span class="address-type-pill">{{ address.get_address_type_display }}</span>
+                            {% if address.is_default %}
+                            <span class="default-pill">Default</span>
+                            {% endif %}
+                        </div>
+                        <h3 class="address-recipient">{{ address.full_name }}</h3>
+                        <p class="address-lines">
+                            {{ address.street_line_1 }}<br>
+                            {% if address.street_line_2 %}{{ address.street_line_2 }}<br>{% endif %}
+                            {{ address.city }}, {{ address.state_or_province }} {{ address.postal_code }}<br>
+                            <strong>{{ address.country }}</strong>
+                        </p>
+                        <div class="address-actions">
+                            <a href="{% url 'accounts:address_edit' address.pk %}" class="btn-link-action">Edit</a>
+                            <span class="action-sep">&bull;</span>
+                            <a href="{% url 'accounts:address_delete' address.pk %}" class="btn-link-action text-danger">Delete</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="address-empty-box">
+                        <p>No destination addresses registered yet.</p>
+                        <a href="{% url 'accounts:address_create' %}" class="btn btn-secondary btn-sm">Register Delivery Address</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

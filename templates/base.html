@@ -23,10 +23,30 @@
                 <a href="{% url 'core:home' %}" class="nav-link">Showroom</a>
                 <a href="{% url 'catalog:vehicle_list' %}" class="nav-link">Catalog</a>
                 <a href="{% url 'catalog:brand_list' %}" class="nav-link">Marques</a>
-                <a href="{% url 'core:health' %}" class="nav-link nav-badge">Status: Live</a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profile' %}" class="nav-link nav-client-portal">
+                    <span class="portal-dot">●</span> Atelier ({{ user.username }})
+                </a>
+                <a href="{% url 'accounts:logout' %}" class="nav-link nav-signout">Sign Out</a>
+                {% else %}
+                <a href="{% url 'accounts:login' %}" class="nav-link">Sign In</a>
+                <a href="{% url 'accounts:register' %}" class="nav-link nav-btn-register">Register</a>
+                {% endif %}
+                <a href="{% url 'core:health' %}" class="nav-link nav-badge">Live</a>
             </nav>
         </div>
     </header>
+
+    {% if messages %}
+    <div class="messages-container container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">
+            <span class="alert-icon">◆</span>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <main class="main-content">
         {% block content %}{% endblock %}

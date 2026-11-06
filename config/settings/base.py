@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # Aurevia Motors Applications
     'apps.core.apps.CoreConfig',
     'apps.catalog.apps.CatalogConfig',
+    'apps.accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
@@ -96,6 +97,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Media files (Dynamic uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Authentication URLs
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'accounts:profile'
+LOGOUT_REDIRECT_URL = 'core:home'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

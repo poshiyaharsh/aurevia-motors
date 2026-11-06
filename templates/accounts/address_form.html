@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} — Aurevia Motors{% endblock %}
+
+{% block content %}
+<section class="section auth-section">
+    <div class="container">
+        <div class="auth-card address-form-card">
+            <div class="auth-header">
+                <span class="section-tag">DESTINATION ADDRESS BOOK</span>
+                <h1 class="auth-title">{{ title }}</h1>
+                <p class="auth-subtitle">
+                    Configure enclosed logistics and confidential billing destinations.
+                </p>
+            </div>
+
+            {% if form.errors %}
+            <div class="form-error-alert">
+                <p>Please review and correct the marked address fields below.</p>
+            </div>
+            {% endif %}
+
+            <form method="post" class="auth-form" novalidate>
+                {% csrf_token %}
+
+                <div class="form-row-dual">
+                    <div class="form-group">
+                        <label class="form-label">Address Classification *</label>
+                        {{ form.address_type }}
+                        {% if form.address_type.errors %}<span class="field-error">{{ form.address_type.errors.0 }}</span>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Recipient / Entity Full Legal Name *</label>
+                        {{ form.full_name }}
+                        {% if form.full_name.errors %}<span class="field-error">{{ form.full_name.errors.0 }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Street Address *</label>
+                    {{ form.street_line_1 }}
+                    {% if form.street_line_1.errors %}<span class="field-error">{{ form.street_line_1.errors.0 }}</span>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Suite / Estate / Hangar (Optional)</label>
+                    {{ form.street_line_2 }}
+                    {% if form.street_line_2.errors %}<span class="field-error">{{ form.street_line_2.errors.0 }}</span>{% endif %}
+                </div>
+
+                <div class="form-row-triple">
+                    <div class="form-group">
+                        <label class="form-label">City / Municipality *</label>
+                        {{ form.city }}
+                        {% if form.city.errors %}<span class="field-error">{{ form.city.errors.0 }}</span>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State / Province *</label>
+                        {{ form.state_or_province }}
+                        {% if form.state_or_province.errors %}<span class="field-error">{{ form.state_or_province.errors.0 }}</span>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Postal / ZIP Code *</label>
+                        {{ form.postal_code }}
+                        {% if form.postal_code.errors %}<span class="field-error">{{ form.postal_code.errors.0 }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Country *</label>
+                    {{ form.country }}
+                    {% if form.country.errors %}<span class="field-error">{{ form.country.errors.0 }}</span>{% endif %}
+                </div>
+
+                <div class="form-checkbox-group">
+                    {{ form.is_default }}
+                    <label for="{{ form.is_default.id_for_label }}" class="checkbox-label">
+                        Set as default address for this classification
+                    </label>
+                </div>
+
+                <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary">Save Destination Address</button>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

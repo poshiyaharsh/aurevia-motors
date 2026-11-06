@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Destination Address — Aurevia Motors{% endblock %}
+
+{% block content %}
+<section class="section auth-section">
+    <div class="container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <span class="section-tag error-tag">CONFIRM REMOVAL</span>
+                <h1 class="auth-title">Remove Address</h1>
+                <p class="auth-subtitle">
+                    Are you sure you wish to permanently remove this destination address from your atelier account?
+                </p>
+            </div>
+
+            <div class="address-card" style="margin-bottom: 28px;">
+                <span class="address-type-pill">{{ address.get_address_type_display }}</span>
+                <h3 class="address-recipient">{{ address.full_name }}</h3>
+                <p class="address-lines">
+                    {{ address.street_line_1 }}<br>
+                    {{ address.city }}, {{ address.state_or_province }} {{ address.postal_code }}<br>
+                    <strong>{{ address.country }}</strong>
+                </p>
+            </div>
+
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+                <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary btn-danger">Confirm Permanent Deletion</button>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Cancel & Return</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

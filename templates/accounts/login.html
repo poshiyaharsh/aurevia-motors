@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Client Authentication — Aurevia Motors Atelier{% endblock %}
+
+{% block content %}
+<section class="section auth-section">
+    <div class="container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="brand-icon">◆</div>
+                <span class="section-tag">SECURE ACCESS</span>
+                <h1 class="auth-title">Client Sign In</h1>
+                <p class="auth-subtitle">
+                    Enter your confidential credentials to manage vehicle acquisitions and portfolio dossiers.
+                </p>
+            </div>
+
+            {% if form.errors %}
+            <div class="form-error-alert">
+                <p>Authentication rejected. Please verify your client identifier and password.</p>
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'accounts:login' %}{% if next %}?next={{ next }}{% endif %}" class="auth-form" novalidate>
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">Client Identifier / Username</label>
+                    {{ form.username }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                    {{ form.password }}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-auth">
+                    Access Client Atelier
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>New to Aurevia Motors? <a href="{% url 'accounts:register' %}">Apply for Client Registration</a></p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
