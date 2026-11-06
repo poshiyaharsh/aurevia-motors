@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from apps.catalog.models import Vehicle
+from apps.orders.pricing import PricingEngine
 from .cart import Cart
 
 
@@ -10,9 +11,18 @@ def cart_detail_view(request):
     Renders the current atelier cart summary with line items and recalculations.
     """
     cart = Cart(request)
+    calculation = PricingEngine.calculate_cart(cart, coupon_code=cart.coupon_code)
+
+    # If a previously applied coupon became invalid (e.g. cart subtotal dropped below min order value)
+    if cart.coupon_code and not calculation.is_coupon_applied:
+        cart.clear_coupon()
+        messages.warning(request, f"Applied coupon was removed: {calculation.coupon_rejection_reason}")
+        calculation = PricingEngine.calculate_cart(cart, coupon_code=None)
+
     context = {
         'cart': cart,
-        'cart_total': cart.get_total_price(),
+        'calculation': calculation,
+        'cart_total': calculation.grand_total,
     }
     return render(request, 'cart/cart_detail.html', context)
 
@@ -70,4 +80,46 @@ def cart_clear_view(request):
     cart = Cart(request)
     cart.clear()
     messages.info(request, "Your atelier cart has been cleared.")
+    return redirect('cart:cart_detail')
+
+
+@require_POST
+def coupon_apply_view(request):
+    """
+    Validates and applies a promotional code / voucher to the current cart.
+    Server strictly recalculates the subtotal and validates business rules.
+    """
+    cart = Cart(request)
+    code = request.POST.get('code', '').strip()
+
+    if not code:
+        messages.error(request, "Please enter a promotional code or voucher.")
+        return redirect('cart:cart_detail')
+
+    if cart.is_empty:
+        messages.error(request, "Cannot apply a voucher to an empty atelier cart.")
+        return redirect('cart:cart_detail')
+
+    calculation = PricingEngine.calculate_cart(cart, coupon_code=code)
+
+    if calculation.is_coupon_applied:
+        cart.set_coupon(calculation.coupon.code)
+        messages.success(
+            request,
+            f"Voucher '{calculation.coupon.code}' applied. Concession of USD ${calculation.discount_amount:,.2f} applied."
+        )
+    else:
+        messages.error(request, calculation.coupon_rejection_reason or "Unable to apply promotional code.")
+
+    return redirect('cart:cart_detail')
+
+
+@require_POST
+def coupon_remove_view(request):
+    """
+    Removes any applied coupon from the atelier session.
+    """
+    cart = Cart(request)
+    cart.clear_coupon()
+    messages.info(request, "Promotional voucher removed from your order.")
     return redirect('cart:cart_detail')

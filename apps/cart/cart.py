@@ -3,6 +3,7 @@ from django.conf import settings
 from apps.catalog.models import Vehicle
 
 CART_SESSION_ID = getattr(settings, 'CART_SESSION_ID', 'aurevia_atelier_cart')
+COUPON_SESSION_ID = getattr(settings, 'COUPON_SESSION_ID', 'aurevia_applied_coupon')
 MAX_ALLOCATION_PER_VEHICLE = 5
 
 
@@ -81,14 +82,41 @@ class Cart:
 
     def clear(self):
         """
-        Empties the cart.
+        Empties the cart and resets applied coupons.
         """
         if hasattr(self.session, '__setitem__'):
             self.session[CART_SESSION_ID] = {}
             self.cart = self.session[CART_SESSION_ID]
+            if COUPON_SESSION_ID in self.session:
+                del self.session[COUPON_SESSION_ID]
             self.save()
         else:
             self.cart = {}
+
+    @property
+    def coupon_code(self):
+        """
+        Returns the currently active coupon code from the session, if any.
+        """
+        if hasattr(self.session, 'get'):
+            return self.session.get(COUPON_SESSION_ID)
+        return None
+
+    def set_coupon(self, code):
+        """
+        Stores the uppercase coupon code into the session.
+        """
+        if hasattr(self.session, '__setitem__'):
+            self.session[COUPON_SESSION_ID] = code.strip().upper()
+            self.save()
+
+    def clear_coupon(self):
+        """
+        Removes the active coupon code from the session.
+        """
+        if hasattr(self.session, '__contains__') and COUPON_SESSION_ID in self.session:
+            del self.session[COUPON_SESSION_ID]
+            self.save()
 
     def save(self):
         """

@@ -4,6 +4,7 @@ Shared across all environments (development, testing, production).
 """
 
 import os
+from decimal import Decimal
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -34,6 +35,7 @@ INSTALLED_APPS = [
     'apps.catalog.apps.CatalogConfig',
     'apps.accounts.apps.AccountsConfig',
     'apps.cart.apps.CartConfig',
+    'apps.orders.apps.OrdersConfig',
 ]
 
 MIDDLEWARE = [
@@ -151,3 +153,10 @@ LOGGING = {
         },
     },
 }
+
+# Pricing & Order Calculation Settings (Server-Authoritative)
+# Default tax rate is 0.00% unless explicitly configured.
+ORDER_TAX_RATE = Decimal(os.environ.get('ORDER_TAX_RATE', '0.00'))
+# Default delivery/transport fee is $0.00 (white-glove enclosed transport is complimentary)
+ORDER_DELIVERY_FEE = Decimal(os.environ.get('ORDER_DELIVERY_FEE', '0.00'))
+

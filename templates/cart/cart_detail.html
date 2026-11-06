@@ -106,32 +106,89 @@
                     <div class="summary-line-row">
                         <span class="summary-label">Vehicles Subtotal</span>
                         <span class="summary-value font-mono">
-                            USD {{ cart_total|intcomma }}
+                            USD {{ calculation.subtotal|intcomma }}
+                        </span>
+                    </div>
+
+                    {% if calculation.has_discount %}
+                    <div class="summary-line-row discount-row">
+                        <span class="summary-label">VIP Voucher ({{ calculation.coupon.code }})</span>
+                        <span class="summary-value font-mono">
+                            - USD {{ calculation.discount_amount|intcomma }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <div class="summary-line-row">
+                        <span class="summary-label">White-Glove Enclosed Transport</span>
+                        <span class="summary-value text-accent">
+                            {% if calculation.delivery_fee > 0 %}
+                            USD {{ calculation.delivery_fee|intcomma }}
+                            {% else %}
+                            Complimentary
+                            {% endif %}
                         </span>
                     </div>
 
                     <div class="summary-line-row">
-                        <span class="summary-label">White-Glove Enclosed Transport</span>
-                        <span class="summary-value text-accent">Complimentary</span>
+                        <span class="summary-label">Duties & Title Escrow</span>
+                        <span class="summary-value text-accent">
+                            {% if calculation.tax_amount > 0 %}
+                            USD {{ calculation.tax_amount|intcomma }}
+                            {% else %}
+                            Complimentary / Included
+                            {% endif %}
+                        </span>
                     </div>
 
-                    <div class="summary-line-row">
-                        <span class="summary-label">Provenance & Title Inspection</span>
-                        <span class="summary-value text-accent">Included</span>
+                    <!-- Promotional / Voucher Input Section -->
+                    <div class="coupon-section">
+                        {% if calculation.is_coupon_applied %}
+                        <div class="coupon-applied-card">
+                            <div class="coupon-applied-info">
+                                <span class="coupon-applied-code">🎟 {{ calculation.coupon.code }}</span>
+                                <span class="coupon-applied-desc">
+                                    {% if calculation.coupon.discount_type == 'percentage' %}
+                                    {{ calculation.coupon.discount_value }}% concession applied
+                                    {% else %}
+                                    USD ${{ calculation.coupon.discount_value|intcomma }} concession applied
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <form method="post" action="{% url 'cart:coupon_remove' %}" class="coupon-remove-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-coupon-remove">Remove</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span class="coupon-section-title">Promotional Voucher</span>
+                        <form method="post" action="{% url 'cart:coupon_apply' %}" class="coupon-form">
+                            {% csrf_token %}
+                            <input 
+                                type="text" 
+                                name="code" 
+                                placeholder="Enter voucher code" 
+                                class="coupon-input"
+                                maxlength="30"
+                                required
+                            >
+                            <button type="submit" class="btn-coupon-apply">Apply</button>
+                        </form>
+                        {% endif %}
                     </div>
 
                     <div class="summary-total-divider"></div>
 
                     <div class="summary-total-row">
-                        <span class="total-label">Estimated Total</span>
+                        <span class="total-label">Final Order Total</span>
                         <div class="total-amount-box">
                             <span class="curr">USD</span>
-                            <span class="amt">{{ cart_total|intcomma }}</span>
+                            <span class="amt">{{ calculation.grand_total|intcomma }}</span>
                         </div>
                     </div>
 
                     <p class="summary-disclaimer">
-                        Applicable duties, regional registration fees, and coupons will be applied in Phase 07 (Order Calculation).
+                        Server-authoritative calculation. All allocations, duties, and promotional concessions are verified against atelier database records.
                     </p>
 
                     <div class="cart-checkout-actions">
@@ -139,7 +196,7 @@
                             Proceed to Valuation & Checkout &rarr;
                         </a>
                         <p class="cta-microcopy">
-                            <small>Order calculations & checkout pipelines activate in Phase 07 & 08.</small>
+                            <small>Secure checkout & payment architecture activates in Phase 08.</small>
                         </p>
                     </div>
 
