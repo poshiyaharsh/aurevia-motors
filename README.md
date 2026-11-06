@@ -1,127 +1,106 @@
-# Aurevia Motors
+# Aurevia Motors — Luxury Supercar Atelier & Digital Showroom
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/poshiyaharsh/aurevia-motors)
-
-Aurevia Motors is a luxury supercar digital showroom and e-commerce platform featuring elite marques including Bugatti, Lamborghini, Ferrari, Rolls-Royce, Porsche, and McLaren. Built with Python 3.12 and Django 5.1, featuring automated on-chain EVM payment verification, responsive atelier showroom, and multi-rail escrow settlement.
+Aurevia Motors is a digital acquisition platform and high-performance automotive showroom engineered for the world's most discerning collectors. Aurevia presents a curated collection of rare hypercars, track specials, and bespoke grand tourers with real-time allocation management, multi-rail financial settlement, and technical dossier visualization.
 
 ---
 
-## 🚀 1-Click Free Deployment on Render
+## The Curated Collection
 
-You can deploy Aurevia Motors live to the web with 100% free hosting and automatic SSL on [Render](https://render.com):
+Aurevia Motors curates six of the world's most prestigious automotive marques, representing the pinnacle of atmospheric, forced-induction, hybrid, and electric propulsion:
 
-1. Click the **Deploy to Render** button above (or connect your GitHub fork on [render.com](https://render.com)).
-2. Render reads [`render.yaml`](render.yaml) and [`build.sh`](build.sh) automatically.
-3. It sets up the Python 3.12 environment, runs migrations, collects compressed WhiteNoise static assets, seeds the 24 hypercars with real studio photography, and gives you a free live `https://<your-subdomain>.onrender.com` URL!
-
----
-
-## Architecture & Module Boundaries
-
-The project enforces clean separation of concerns across dedicated application packages:
-
-| Application Package | Scope & Responsibility |
-|---|---|
-| `apps/core` | Base layout, showroom landing views, operational health diagnostics, custom branded error handlers (404/500), and utility management commands. |
-| `apps/catalog` *(Phase 02/03)* | Marque specifications, vehicle models, luxury features, pricing attributes, and high-resolution media galleries. |
-| `apps/accounts` *(Phase 05)* | Customer authentication, KYC verification, profile administration, and shipping/billing address books. |
-| `apps/cart` *(Phase 06)* | High-performance cart management, reservation tokens, and item quantity constraints. |
-| `apps/orders` *(Phase 07/09)* | Pricing engine, luxury tax and duty calculations, coupon validation, order lifecycle records, and invoice generation. |
-| `apps/payments` *(Phase 08)* | Dual settlement abstraction: traditional card payments and Web3 / MetaMask cryptographically verified transaction rails. |
+| Marque | Heritage Origin | Engineering Hallmarks | Flagship Allocations |
+|:---|:---|:---|:---|
+| **Bugatti** | Molsheim, France | Quad-turbo W16, Cosworth V16 hybrid, 300+ mph aerodynamics | Tourbillon V16, Chiron Super Sport 300+, W16 Mistral, Bolide |
+| **Ferrari** | Maranello, Italy | Formula 1 kinetic hybrid tech, twin-turbo V8, naturally aspirated V12 | SF90 XX Stradale, 812 Competizione, Daytona SP3, 296 GTB Assetto Fiorano |
+| **Lamborghini** | Sant'Agata Bolognese, Italy | Naturally aspirated V12 hybrid, extreme ALA aerodynamics, V10 naturally aspirated | Revuelto HPEV, Aventador SVJ, Huracán STO, Countach LPI 800-4 |
+| **McLaren** | Woking, United Kingdom | Carbon fiber Monocage, twin-turbo V8, active aerodynamics | P1, Senna Track Series, Speedtail Hyper-GT, 750S Spider |
+| **Porsche** | Stuttgart, Germany | High-revving flat-six, lightweight Weissach engineering, hybrid pioneers | 918 Spyder Weissach, 911 GT3 RS (992), 911 GT2 RS Clubsport, Carrera GT |
+| **Rolls-Royce** | Goodwood, United Kingdom | Twin-turbo V12 waftability, all-electric architecture, Architecture of Luxury | Phantom VIII Series II, Ghost Black Badge, Spectre All-Electric, Cullinan Series II |
 
 ---
 
-## Configuration & Settings Architecture
+## Platform Capabilities & Showroom Experience
 
-Settings are modularized under `config/settings/` for clean environment separation:
+### 1. Curated Digital Showroom & Faceted Discovery
+- **Multi-Parameter Filtering**: Faceted filtering by marque, horsepower tier, aspiration/fuel architecture (petrol, hybrid, electric), transmission, and budget.
+- **Dynamic Inventory Counts**: Live inventory counts update dynamically with search queries and faceted filters.
+- **Visual Status Tracking**: Visual status badges indicate vehicle state (`Available in Atelier`, `Allocation Reserved`, `Acquired / Sold`).
 
-- **`config/settings/base.py`**: Common application definitions, middleware pipeline, template processors, authentication password validators, internationalization, and structured console logging.
-- **`config/settings/development.py`**: Local development profile with `DEBUG=True`, console email backend, and SQLite database.
-- **`config/settings/production.py`**: Security-hardened profile with `DEBUG=False`, strict secret validation, HTTPS redirection, HSTS headers, and secure cookie flags.
-- **`config/settings/__init__.py`**: Dynamically switches profiles via `DJANGO_ENV` (defaults to `development`).
+### 2. Technical Dossiers & Multi-Angle Atelier Media
+- **Multi-Angle Studio Gallery**: Every hypercar features high-resolution studio photography across four dedicated perspectives:
+  - *Hero Studio Stance*
+  - *Cockpit & Bespoke Controls*
+  - *Rear Aerodynamic Profile*
+  - *Track Stance & Chassis Detail*
+- **Comprehensive Mechanical Specifications**: Detailed categorizations covering powertrain, chassis, transmission, forced induction, braking systems, dry weight, and top speed metrics.
+- **Provenance & VIN Tracking**: Official vehicle identification numbers (VIN), mileage tracking, exterior livery codes, and bespoke interior appointments.
+
+### 3. Allocation Session Cart & Pricing Engine
+- **Server-Authoritative Cart**: Cart state is securely tied to user sessions with inventory boundary constraints.
+- **Luxury Tax & Surcharge Computation**: Configurable regional taxation engine calculating subtotal, duties, and grand totals with decimal precision.
+- **VIP Allocation Vouchers**: Coupon engine supporting percentage discounts and fixed-amount atelier credits with expiration dates and minimum qualifying balances.
+
+### 4. Dual-Rail Settlement Architecture
+- **Concierge Bank Escrow Transfer**: High-value wire settlement workflow with IBAN/SWIFT instructions, anti-tamper wire confirmation reference tracking, and payment verification auditing.
+- **Cryptographic Web3 / MetaMask EVM Rail**:
+  - Injected Ethereum provider integration (EIP-1193 standard).
+  - Automated transaction parameter construction with checksummed receiver contracts.
+  - Server-side cryptographic receipt verification querying Ethereum JSON-RPC nodes.
+  - Anti-replay protection enforcing unique transaction hashes and matching sender wallet addresses.
+
+### 5. Client Portfolio & Order Dossiers
+- **Private Client Profiles**: Secure authentication, personal credentials, and multi-address book management for white-glove transport delivery.
+- **Order Lifecycle Transparency**: Real-time status progression from `Pending Escrow` to `Payment Confirmed`, `Atelier Processing`, and `Delivered`.
+- **Downloadable Acquisition Dossiers**: Complete printable and archival order invoices documenting allocated VINs, pricing breakdowns, applied credits, and transaction hashes.
+
+### 6. Operational Governance & Anti-Tamper Audit Trail
+- **Comprehensive Administration**: Staff interfaces for managing vehicle inventory, technical specifications, brand profiles, and promotional allocations.
+- **Immutable Financial Audit Log**: Dedicated `OrderAuditLog` tracking all order status updates, operator identities, timestamped transitions, and tamper-evident wire reference notes.
 
 ---
 
-## Development Setup
+## Technical Architecture
 
-### 1. Prerequisites
+The platform is designed around modular, domain-driven Django applications:
 
-- Python 3.10+ (Python 3.12 recommended)
-- Git 2.30+
-
-### 2. Environment Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/poshiyaharsh/aurevia-motors.git
-cd aurevia-motors
-
-# Create and activate virtual environment
-python -m venv .venv
-# On Windows:
-.\.venv\Scripts\activate
-# On macOS/Linux:
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create environment configuration file
-cp .env.example .env
+```
+aurevia-motors/
+├── apps/
+│   ├── core/         # Showroom landing, system health checks, branded 404/500 handlers
+│   ├── catalog/      # Marques, hypercars, multi-angle media galleries, specifications
+│   ├── accounts/     # VIP client authentication, profile management, delivery address book
+│   ├── cart/         # High-concurrency session cart & reservation tokens
+│   └── orders/       # Order lifecycle state machine, pricing engine, escrow & Web3 settlement
+├── config/
+│   ├── settings/     # Modularized settings (base, development, production)
+│   ├── urls.py       # Global URL routing & media asset dispatching
+│   ├── wsgi.py       # WSGI entry point
+│   └── asgi.py       # ASGI entry point
+├── static/
+│   ├── css/style.css # Dark atelier design system with 24K gold accents
+│   └── js/main.js    # Gallery switcher, modal controllers, MetaMask Web3 client
+└── templates/        # Semantic HTML5 templates
 ```
 
-### 3. Database & System Validation
+### Technology Stack
 
-```bash
-# Run system checks
-python manage.py check
-
-# Apply migrations
-python manage.py migrate
-
-# Execute automated tests
-python manage.py test
-```
-
-### 4. Running the Development Server
-
-```bash
-python manage.py runserver
-```
-Visit `http://127.0.0.1:8000/` for the showroom or `http://127.0.0.1:8000/health/` for real-time system diagnostics.
+- **Core Framework**: Python 3.12 / Django 5.1
+- **Asset Processing**: Pillow (high-fidelity Lanczos resampling, dynamic aspect-ratio cropping, atelier watermarking)
+- **Static Asset Pipeline**: WhiteNoise with Brotli and Gzip compression
+- **Web3 Integration**: EIP-1193 MetaMask client bridge with server-side RPC receipt inspection
+- **Design System**: Responsive Dark Atelier aesthetic (`#0A0C10` background, `#D4AF37` 24K gold accents, fluid typography, WCAG AA contrast compliance)
 
 ---
 
-## Database Backup & Migration Safety
+## Security Architecture
 
-Before running any database migrations or schema alterations, take an atomic snapshot:
-
-```bash
-# Create an atomic timestamped backup into /backups (gitignored)
-python manage.py backup_db
-```
-
-### Rollback Strategy
-If a migration or bad state needs to be rolled back:
-1. Revert to the latest backup file:
-   ```bash
-   cp backups/db_backup_YYYYMMDD_HHMMSS.sqlite3 db.sqlite3
-   ```
-2. In Git, revert problematic commits:
-   ```bash
-   git revert <commit-hash>
-   ```
+- **Server-Authoritative State**: All financial pricing, discounts, and order totals are computed server-side to prevent client-side manipulation.
+- **CSRF & Session Hardening**: Strictly enforced CSRF tokens on all state-mutating requests, HTTP-only secure cookie flags, and session boundary validation.
+- **Safe Navigation Controls**: Strict `url_has_allowed_host_and_scheme` validation to guard against open-redirect vulnerabilities.
+- **Header Protections**: Clickjacking defense (`X-Frame-Options: DENY`), MIME sniffing prevention (`X-Content-Type-Options: nosniff`), and HSTS enforcement.
 
 ---
 
-## Git Baseline & Branch Strategy
+## Licensing & Provenance
 
-- **`main`**: Production-ready, verified code. Every merge to `main` must pass tests and system checks.
-- **`feature/phase-XX`**: Incremental phase implementation branches.
-- **Commit Conventions**: Conventional commits formatted as `Phase XX: Description`.
-
----
-
-## License
-
-All rights reserved. Proprietary and confidential.
+Aurevia Motors is a high-performance demonstration project showcasing enterprise-grade full-stack Python/Django architecture, digital asset presentation, and hybrid Web2/Web3 financial workflows.

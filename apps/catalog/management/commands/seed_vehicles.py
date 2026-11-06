@@ -23,6 +23,8 @@ def fetch_and_save_real_car_image(image_url: str, output_path: Path, fallback_ar
     and saves it to the atelier media store. Falls back gracefully to studio render if offline.
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    if output_path.exists() and output_path.stat().st_size > 1000:
+        return str(output_path)
     try:
         req = urllib.request.Request(
             image_url,
