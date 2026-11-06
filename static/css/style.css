@@ -458,6 +458,64 @@ body {
     gap: 16px;
 }
 
+/* Error Pages */
+.error-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 65vh;
+    text-align: center;
+}
+
+.error-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 60px 40px;
+    max-width: 650px;
+    margin: 0 auto;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.error-badge {
+    display: inline-block;
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--accent-gold);
+    border: 1px solid var(--border-color);
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    margin-bottom: 24px;
+}
+
+.error-badge-alert {
+    background: rgba(248, 81, 73, 0.15);
+    color: var(--error);
+    border-color: rgba(248, 81, 73, 0.4);
+}
+
+.error-title {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    margin-bottom: 16px;
+}
+
+.error-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin-bottom: 36px;
+}
+
+.error-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
 /* Footer */
 .footer {
     background: #07080b;

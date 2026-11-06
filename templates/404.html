@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}404 — Destination Not Found | Aurevia Motors{% endblock %}
+
+{% block content %}
+<section class="section error-section">
+    <div class="container">
+        <div class="error-card">
+            <div class="error-badge">404 ERROR</div>
+            <h1 class="error-title">Destination Unknown</h1>
+            <p class="error-subtitle">
+                The bespoke route or vehicle portfolio you are attempting to access does not exist or has been relocated within the atelier.
+            </p>
+            <div class="error-actions">
+                <a href="{% url 'core:home' %}" class="btn btn-primary">Return to Showroom</a>
+                <a href="{% url 'core:health' %}" class="btn btn-secondary">System Health</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

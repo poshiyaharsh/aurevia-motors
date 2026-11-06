@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}500 — System Maintenance | Aurevia Motors{% endblock %}
+
+{% block content %}
+<section class="section error-section">
+    <div class="container">
+        <div class="error-card">
+            <div class="error-badge error-badge-alert">500 ANOMALY</div>
+            <h1 class="error-title">Technical Interruption</h1>
+            <p class="error-subtitle">
+                An unexpected condition was encountered by the platform telemetry. Our engineering team has been notified.
+            </p>
+            <div class="error-actions">
+                <a href="{% url 'core:home' %}" class="btn btn-primary">Return to Showroom</a>
+                <a href="{% url 'core:health' %}" class="btn btn-secondary">Platform Telemetry</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

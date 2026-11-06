@@ -2,79 +2,113 @@
 
 Aurevia Motors is a luxury supercar digital showroom and e-commerce platform featuring elite marques including Bugatti, Lamborghini, Ferrari, Rolls-Royce, Porsche, and McLaren.
 
-## Overview
+---
 
-Aurevia Motors provides a bespoke digital experience for exploring, configuring, and acquiring luxury supercars. The platform is designed with modern web architecture, featuring:
+## Architecture & Module Boundaries
 
-- **Digital Showroom & Catalog**: Dynamic vehicle discovery, comprehensive technical specifications, and high-resolution galleries.
-- **Customer Accounts & Profiles**: Personalized client portals and saved configurations.
-- **Cart & Order Lifecycle**: Seamless checkout workflow with order tracking and history.
-- **Hybrid Payments**: Support for conventional payments and Web3/MetaMask cryptocurrency transactions.
-- **Administrative Control**: Robust back-office management for inventory, orders, and inquiries.
+The project enforces clean separation of concerns across dedicated application packages:
 
-## Technology Stack
+| Application Package | Scope & Responsibility |
+|---|---|
+| `apps/core` | Base layout, showroom landing views, operational health diagnostics, custom branded error handlers (404/500), and utility management commands. |
+| `apps/catalog` *(Phase 02/03)* | Marque specifications, vehicle models, luxury features, pricing attributes, and high-resolution media galleries. |
+| `apps/accounts` *(Phase 05)* | Customer authentication, KYC verification, profile administration, and shipping/billing address books. |
+| `apps/cart` *(Phase 06)* | High-performance cart management, reservation tokens, and item quantity constraints. |
+| `apps/orders` *(Phase 07/09)* | Pricing engine, luxury tax and duty calculations, coupon validation, order lifecycle records, and invoice generation. |
+| `apps/payments` *(Phase 08)* | Dual settlement abstraction: traditional card payments and Web3 / MetaMask cryptographically verified transaction rails. |
 
-- **Backend**: Python / Django
-- **Frontend**: Django Templates, HTML5, Modern CSS, JavaScript
-- **Database**: SQLite (Development) / PostgreSQL (Production)
-- **Web3 / Blockchain**: Web3.py, Web3.js, MetaMask Integration
-- **Asset Handling**: Pillow
-- **Version Control**: Git & GitHub
+---
 
-## Repository Structure
+## Configuration & Settings Architecture
 
-```text
-aurevia-motors/
-├── config/                  # Django project configuration & root URLs
-├── apps/                    # Modular Django applications
-│   ├── core/                # Shared utilities & landing views
-│   ├── catalog/             # Vehicle inventory & marque showcases
-│   ├── accounts/            # Authentication & customer profiles
-│   ├── cart/                # Shopping cart functionality
-│   ├── orders/              # Checkout & order processing
-│   └── payments/            # Traditional & Web3 payment gateway
-├── templates/               # Shared presentation templates
-├── static/                  # CSS, JavaScript & branding assets
-├── media/                   # Dynamic vehicle & media uploads
-├── .gitignore               # Ignored runtime, dev & environment files
-├── README.md                # Project documentation
-└── requirements.txt         # Project dependencies
+Settings are modularized under `config/settings/` for clean environment separation:
+
+- **`config/settings/base.py`**: Common application definitions, middleware pipeline, template processors, authentication password validators, internationalization, and structured console logging.
+- **`config/settings/development.py`**: Local development profile with `DEBUG=True`, console email backend, and SQLite database.
+- **`config/settings/production.py`**: Security-hardened profile with `DEBUG=False`, strict secret validation, HTTPS redirection, HSTS headers, and secure cookie flags.
+- **`config/settings/__init__.py`**: Dynamically switches profiles via `DJANGO_ENV` (defaults to `development`).
+
+---
+
+## Development Setup
+
+### 1. Prerequisites
+
+- Python 3.10+ (Python 3.12 recommended)
+- Git 2.30+
+
+### 2. Environment Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/poshiyaharsh/aurevia-motors.git
+cd aurevia-motors
+
+# Create and activate virtual environment
+python -m venv .venv
+# On Windows:
+.\.venv\Scripts\activate
+# On macOS/Linux:
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create environment configuration file
+cp .env.example .env
 ```
 
-## Getting Started
+### 3. Database & System Validation
 
-### Prerequisites
+```bash
+# Run system checks
+python manage.py check
 
-- Python 3.10+
-- Git
+# Apply migrations
+python manage.py migrate
 
-### Setup
+# Execute automated tests
+python manage.py test
+```
 
-1. **Clone the repository:**
+### 4. Running the Development Server
+
+```bash
+python manage.py runserver
+```
+Visit `http://127.0.0.1:8000/` for the showroom or `http://127.0.0.1:8000/health/` for real-time system diagnostics.
+
+---
+
+## Database Backup & Migration Safety
+
+Before running any database migrations or schema alterations, take an atomic snapshot:
+
+```bash
+# Create an atomic timestamped backup into /backups (gitignored)
+python manage.py backup_db
+```
+
+### Rollback Strategy
+If a migration or bad state needs to be rolled back:
+1. Revert to the latest backup file:
    ```bash
-   git clone https://github.com/poshiyaharsh/aurevia-motors.git
-   cd aurevia-motors
+   cp backups/db_backup_YYYYMMDD_HHMMSS.sqlite3 db.sqlite3
+   ```
+2. In Git, revert problematic commits:
+   ```bash
+   git revert <commit-hash>
    ```
 
-2. **Create and activate a virtual environment:**
-   ```bash
-   python -m venv venv
-   # On Windows:
-   .\venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
+---
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Git Baseline & Branch Strategy
 
-4. **Run migrations and start local development server:**
-   ```bash
-   python manage.py migrate
-   python manage.py runserver
-   ```
+- **`main`**: Production-ready, verified code. Every merge to `main` must pass tests and system checks.
+- **`feature/phase-XX`**: Incremental phase implementation branches.
+- **Commit Conventions**: Conventional commits formatted as `Phase XX: Description`.
+
+---
 
 ## License
 

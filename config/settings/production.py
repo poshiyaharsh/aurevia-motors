@@ -1,0 +1,38 @@
+"""
+Production security settings for Aurevia Motors project.
+"""
+
+import os
+from .base import *
+
+# Enforce Debug False in production
+DEBUG = False
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
+    if host.strip()
+]
+
+# Ensure a secure secret key is supplied
+if SECRET_KEY.startswith('django-insecure-'):
+    raise ValueError("Production environment must set a secure DJANGO_SECRET_KEY in .env")
+
+# HTTPS and Security Headers
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Production Database (Default fallback to SQLite unless DATABASE_URL is configured in later phases)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
